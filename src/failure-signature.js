@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
 import { stripVTControlCharacters } from 'node:util';
+import { pathToFileURL } from 'node:url';
 
 export function normalizeOutput(value, { roots = [] } = {}) {
   let text = stripVTControlCharacters(value).replaceAll('\r\n', '\n');
   for (const root of [...new Set(roots)].filter(Boolean).sort((a, b) => b.length - a.length)) {
+    text = text.split(pathToFileURL(root).href).join('file://<workspace>');
     text = text.split(root).join('<workspace>');
   }
   // Normalize only recognized timing metadata, never arbitrary numbers or paths.

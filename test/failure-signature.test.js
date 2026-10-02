@@ -26,3 +26,10 @@ test('success, timeout, signal, truncated and empty failures are never signature
 test('unexpected output changes are conservatively rejected', () => {
   assert.equal(sameFailure(failureSignature(result('Error: bug', { stdout: 'seed=123' })), failureSignature(result('Error: bug', { stdout: 'seed=456' }))), false);
 });
+
+
+test('file URL encoding in paths with spaces is normalized', () => {
+  const a = failureSignature(result('TypeError: bug\n at file:///tmp/a/src/parser.js:4:2'), { roots: ['/tmp/a'] });
+  const b = failureSignature(result('TypeError: bug\n at file:///tmp/with%20spaces/src/parser.js:4:2'), { roots: ['/tmp/with spaces'] });
+  assert.equal(sameFailure(a, b), true);
+});
