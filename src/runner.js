@@ -3,7 +3,7 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { ReproError } from './errors.js';
 
-export async function runCommand({ command, cwd, timeoutMs = 10_000, maxOutputBytes = 1_048_576 }) {
+export async function runCommand({ command, cwd, timeoutMs = 10_000, maxOutputBytes = 1_048_576, env = {} }) {
   if (process.platform === 'win32') {
     throw new ReproError('UNSUPPORTED_PLATFORM', 'V1 requires macOS or Linux for process-group cleanup.');
   }
@@ -21,8 +21,8 @@ export async function runCommand({ command, cwd, timeoutMs = 10_000, maxOutputBy
       cwd, shell: '/bin/sh', detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
-        ...process.env,
-        PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ''}`,
+        ...process.env, ...env,
+        PATH: `${path.dirname(process.execPath)}${path.delimiter}${env.PATH ?? process.env.PATH ?? ''}`,
         NO_COLOR: '1', FORCE_COLOR: '0',
       },
     });

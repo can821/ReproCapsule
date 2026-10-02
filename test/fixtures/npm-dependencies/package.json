@@ -1,0 +1,20 @@
+{
+  "name": "repro-dependency-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "test": "node repro.cjs"
+  },
+  "dependencies": {
+    "@repro/parser": "file:vendor/parser.tgz",
+    "@repro/helper": "file:vendor/helper.tgz",
+    "@repro/unused-a": "file:vendor/unused-a.tgz"
+  },
+  "devDependencies": {
+    "@repro/unused-b": "file:vendor/unused-b.tgz"
+  },
+  "optionalDependencies": {
+    "@repro/unused-c": "file:vendor/unused-c.tgz"
+  }
+}
