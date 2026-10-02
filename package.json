@@ -1,6 +1,6 @@
 {
   "name": "reprocapsule",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Reduce a failing Node.js project while preserving its failure signature",
   "type": "module",
   "private": true,

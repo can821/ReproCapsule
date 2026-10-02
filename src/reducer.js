@@ -1,6 +1,6 @@
 // Complement-based ddmin: reject whole chunks, then refine to individual removals.
 // For deterministic predicates this reaches a 1-minimal set, not a global minimum.
-export async function reduceFiles(files, preserves, { onProgress = () => {}, shouldStop = () => null } = {}) {
+export async function reduceFiles(files, preserves, { onProgress = () => {}, shouldStop = () => null, onAccepted = async () => {} } = {}) {
   let retained = [...files].sort(), partitions = 2;
   let attempts = 0, accepted = 0;
   while (retained.length) {
@@ -20,6 +20,7 @@ export async function reduceFiles(files, preserves, { onProgress = () => {}, sho
       if (preserved) {
         retained = candidate;
         accepted++;
+        await onAccepted([...retained], { attempts, accepted });
         onProgress({ retained: retained.length, attempts, accepted });
         partitions = Math.max(2, partitions - 1);
         reduced = true;

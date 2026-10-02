@@ -2,12 +2,14 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildCapsule } from './capsule.js';
 import { verifyCapsule } from './verify.js';
+import { resumeOptions } from './checkpoint.js';
 import { ReproError } from './errors.js';
 
 const help = `ReproCapsule — reduce and independently verify failing npm projects
 
   reprocapsule reduce --repo PATH --command 'node test/repro.js' --out PATH
   reprocapsule verify CAPSULE
+  reprocapsule resume CHECKPOINT --out NEW_PATH
 
 Options:
   --timeout-ms N / --command-timeout N  Command timeout in milliseconds (10000)
@@ -19,6 +21,7 @@ Options:
   --match-stderr TEXT [--exit-code N]   Explicit broader failure predicate
   --max-runs N                        Total reproduction budget, including 2 final runs
   --max-time N                        Reduction deadline in seconds; final verification extra
+  --checkpoint PATH                   Atomic progress file outside source/output
   --keep RELATIVE_PATH                Protect a file/directory; repeatable
   --json                              Machine-readable result
   --help                              Show help
@@ -36,7 +39,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -59,13 +62,16 @@ export async function main(args = process.argv.slice(2)) {
     else console.log(`ReproCapsule verification\nIntegrity: PASS\nInstall: ${result.install === 'pass' ? 'PASS' : 'NOT REQUIRED'}\nFailure reproduction: PASS\nCAPSULE VERIFIED`);
     return result;
   }
-  if (positionals.length !== 1 || positionals[0] !== 'reduce' || !values.repo || !values.command?.trim()) {
+  const resuming = positionals[0] === 'resume' && positionals.length === 2;
+  if (!resuming && (positionals.length !== 1 || positionals[0] !== 'reduce' || !values.repo || !values.command?.trim())) {
     throw new ReproError('INVALID_ARGUMENTS', 'Use reduce --repo PATH --command COMMAND [--out PATH], or verify CAPSULE. See --help.');
   }
+  const restored = resuming ? await resumeOptions(positionals[1], { allowInstallScripts: common.allowInstallScripts }) : {};
   const result = await buildCapsule({
-    repo: path.resolve(values.repo), command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
+    repo: values.repo ? path.resolve(values.repo) : undefined, command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
     baselineRuns: positive('baseline-runs', 2), matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
-    maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [],
+    maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint,
+    ...restored,
     onProgress(event) {
       if (values.json) return;
       if (event.phase === 'baseline') console.log(`Baseline failure confirmed (${event.baselineRuns} clean runs; ${event.predicate}${event.predicate === 'strict' ? '' : ', explicit user definition'})\n${event.candidates} candidate files\nReducing...`);

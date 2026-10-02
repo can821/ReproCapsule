@@ -14,7 +14,7 @@ export const isControlFile = (file) => protectedNames.has(path.basename(file));
 export async function inventory(repo) {
   const root = await realpath(repo);
   if (!(await lstat(root)).isDirectory()) throw new ReproError('INVALID_REPO', 'Repository must be a directory.');
-  const files = [], exclusions = [];
+  const files = [], exclusions = [], modes = {};
   async function visit(dir, prefix = '') {
     const entries = (await readdir(dir, { withFileTypes: true })).sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
     for (const entry of entries) {
@@ -24,11 +24,11 @@ export async function inventory(repo) {
       if (excluded(entry.name) || !stat.isFile() && !stat.isDirectory()) {
         exclusions.push({ path: relative, reason: stat.isSymbolicLink() ? 'symlink' : 'excluded-or-special' });
       } else if (stat.isDirectory()) await visit(full, relative);
-      else files.push(relative);
+      else { files.push(relative); modes[relative] = stat.mode & 0o777; }
     }
   }
   await visit(root);
-  return { root, files, exclusions };
+  return { root, files, exclusions, modes };
 }
 
 export async function copyFiles(source, destination, files) {

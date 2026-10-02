@@ -39,7 +39,7 @@ For deterministic predicates the algorithm seeks phase-local 1-minimal sets, not
 | `--keep config/runtime.json` | Protect exact relative file/directory; repeatable |
 | `--json` | Structured reduce/verify result, without progress text |
 
-Budget exhaustion exports the best state only after mandatory verification, marks it `PARTIAL`, and makes no minimality claim. A failed final verification produces no capsule. npm installs have separate timeouts and are not counted as reproduction runs. Repeated complete candidate outcomes are cached in memory for this run, keyed by files, dependencies, command and predicate; transient failures/timeouts are not cached. Final checks always bypass the cache. No checkpoint/resume.
+Budget exhaustion exports the best state only after mandatory verification, marks it `PARTIAL`, and makes no minimality claim. A failed final verification produces no capsule. npm installs have separate timeouts and are not counted as reproduction runs. Repeated complete candidate outcomes are cached in memory for this run, keyed by files, dependencies, command and predicate; transient failures/timeouts are not cached. Final checks always bypass the cache. Checkpoint/resume is available as described below.
 
 ## Actual measured demos
 
@@ -89,4 +89,15 @@ Secret exclusions are filename rules, not a complete content scanner. Never put 
 
 Offline fixture installs are verified; a broad public-registry/native-addon matrix is not. Installs with disabled scripts may not support native/build-time dependencies; opt in explicitly when trusted. Runtime/OS metadata does not recreate an entire machine. npm's declared `packageManager` is detected, but its exact version is not automatically installed. Windows is unsupported; Linux is implemented but not exercised here. Detached processes can escape a process group; forced termination may leave temporary files. Baseline repetitions do not prove absence of all flakiness. Strict transcript matching can reject otherwise equivalent failures.
 
-Next milestone: source-validated checkpoint/resume, preserving verified partial reductions across interruptions.
+## Checkpoint / resume
+
+```sh
+node bin/reprocapsule.js reduce --repo ./broken-app --command 'npm test' --out ./partial --checkpoint ./progress.json --max-runs 12
+node bin/reprocapsule.js resume ./progress.json --out ./continued --max-runs 100
+```
+
+Checkpoint paths must be new and outside source/output. Atomic JSON saves happen after baseline confirmation, each accepted removal, and phase boundaries. An interruption can lose unfinished work, but never requires old temporary directories or node_modules. Resume verifies the filtered source's file inventory/content/modes and exact tool/Node/npm/platform identity, then reconfirms the saved failure in clean copies. Changes refuse resume. Checkpoints are trusted local data containing the recorded command, not environment values or raw diagnostics. Script-enabled checkpoints require a fresh `--allow-install-scripts` opt-in.
+
+Resume starts the unfinished phase from the best retained set; completed phases are skipped. Cache outcomes are deliberately not carried across environments. Each invocation gets fresh run/time budgets and records prior reproduction counts separately. Concurrent writers to the same checkpoint are unsupported. Source changes to deliberately excluded files (e.g. .env) are outside the snapshot. A valid checkpoint is progress evidence, not an independently verified capsule.
+
+Next milestone: retained-item explanations and an optional budgeted 1-minimality audit.

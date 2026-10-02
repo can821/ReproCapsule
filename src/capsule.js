@@ -12,6 +12,7 @@ import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
 import { ReductionBudget } from './budget.js';
+import { checkpointPath, writeCheckpoint, toolVersion } from './checkpoint.js';
 
 function infrastructureFailure(result) {
   return result.exitCode === 126 || result.exitCode === 127 ||
@@ -21,11 +22,12 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [] }) {
+  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState }) {
   const started = performance.now();
   const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
   const predicate = createPredicate({ matchStderr, exitCode });
   const destination = await validateOutput(repo, output);
+  const checkpointFile = checkpoint ? await checkpointPath(repo, checkpoint, destination, Boolean(resumeState)) : null;
   const workspace = await createWorkspace(repo);
   let outputCreated = false;
   try {
@@ -41,15 +43,26 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
         throw new ReproError('INVALID_ARGUMENTS', '--keep needs an existing, allowed repository-relative file or directory.');
       }
     }
+    const sourceSnapshotId = snapshotId({ hashes: await fileHashes(workspace.snapshot, workspace.files), modes: workspace.modes });
+    if (resumeState && resumeState.sourceSnapshotId !== sourceSnapshotId) throw new ReproError('SOURCE_CHANGED', 'REFUSE RESUME: source snapshot changed.');
     const manager = await detectPackageManager(workspace.snapshot, workspace.files);
     const npm = manager.needsInstall ? await discoverNpm({ npmPath, cwd: workspace.snapshot }) : null;
     const commandNpm = npm ?? (commandUsesNpm(command) ? await discoverNpm({ npmPath, cwd: workspace.snapshot }) : null);
     const commandEnv = commandNpm ? await npmEnvironment(commandNpm, workspace.root) : {};
-    const sourceSnapshotId = snapshotId(await fileHashes(workspace.snapshot, workspace.files));
+    const runtime = { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, arch: process.arch };
+    if (resumeState && JSON.stringify(runtime) !== JSON.stringify(resumeState.runtime)) throw new ReproError('CHECKPOINT_INCOMPATIBLE', 'Runtime changed; start a new reduction.');
     const protectedFiles = workspace.files.filter((file) => isControlFile(file) || keep.some((entry) => under(file, entry)));
     const candidates = workspace.files.filter((file) => !protectedFiles.includes(file));
     const originalDependencies = manager.ids;
     let retainedDependencies = [...originalDependencies], retained = [...workspace.files];
+    let phase = resumeState?.state.phase ?? 'files';
+    if (resumeState) {
+      retained = resumeState.state.files;
+      retainedDependencies = resumeState.state.dependencies;
+      if (new Set(retained).size !== retained.length || new Set(retainedDependencies).size !== retainedDependencies.length ||
+          retained.some((file) => !workspace.files.includes(file)) || retainedDependencies.some((id) => !originalDependencies.includes(id)) ||
+          protectedFiles.some((file) => !retained.includes(file))) throw new ReproError('INVALID_CHECKPOINT', 'Checkpoint items are inconsistent with the source/protection policy.');
+    }
     const packageStates = new Map(), cache = new Map();
     let cacheHits = 0, installCount = 0, attempts = 0, accepted = 0;
     let dependencyAttempts = 0, dependencyAccepted = 0, terminationReason = 'complete';
@@ -94,12 +107,27 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       const reason = first.result.timedOut ? 'command timed out' : first.result.outputExceeded ? 'output limit exceeded' : first.result.exitCode === 0 ? 'command succeeded' : infrastructureFailure(first.result) ? 'missing module, command or package setup' : 'no matching normal failure';
       throw new ReproError('INVALID_BASELINE', `Cannot establish a safe baseline: ${reason}.`);
     }
+    if (resumeState && !matchesPredicate(predicate, resumeState.acceptedFailure, first.result, first.cwd)) throw new ReproError('CHECKPOINT_FAILURE_CHANGED', 'REFUSE RESUME: retained state no longer matches its accepted failure.');
     for (let run = 1; run < baselineRuns; run++) {
       const observed = await observe(retained, retainedDependencies);
       if (!matchesPredicate(predicate, first.signature, observed.result, observed.cwd)) {
         throw new ReproError('UNSTABLE_BASELINE', 'NON-DETERMINISTIC BASELINE: clean runs disagree under the selected failure predicate.');
       }
     }
+    const acceptedFailure = { version: first.signature.version, strategy: first.signature.strategy, digest: first.signature.digest, exitCode: first.signature.exitCode };
+    async function persist(status = 'running', progress = {}) {
+      if (!checkpointFile) return;
+      await writeCheckpoint(checkpointFile, {
+        schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline },
+        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase },
+        counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
+          candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },
+        budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null },
+        cachePolicy: 'not-persisted: revalidate in a fresh environment', status, updatedAt: new Date().toISOString(),
+      });
+    }
+    await persist();
     onProgress({ phase: 'baseline', candidates: candidates.length, baselineRuns, predicate: predicate.type });
     async function preserves(files, ids) {
       const key = JSON.stringify([[...files].sort(), [...ids].sort(), command, predicate]);
@@ -122,22 +150,33 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       const removable = retained.filter((file) => !fixed.includes(file));
       const reduction = await reduceFiles(removable, (files) => preserves([...fixed, ...files], retainedDependencies), {
         shouldStop: () => budget.reason(), onProgress: (event) => onProgress({ phase: 'reduction', ...event }),
+        onAccepted: async (files, progress) => { retained = [...fixed, ...files].sort(); await persist('running', progress); },
       });
       retained = [...fixed, ...reduction.retained].sort();
       attempts += reduction.attempts; accepted += reduction.accepted;
       if (!reduction.complete) terminationReason = reduction.terminationReason;
     }
-    await reduceProjectFiles();
-    if (npm && terminationReason === 'complete') {
+    if (phase === 'files') {
+      await reduceProjectFiles();
+      if (terminationReason === 'complete') phase = npm ? 'dependencies' : 'done';
+      await persist(terminationReason === 'complete' ? 'running' : 'partial');
+    }
+    if (phase === 'dependencies' && terminationReason === 'complete') {
       const reduction = await reduceFiles(retainedDependencies, (ids) => preserves(retained, ids), {
         shouldStop: () => budget.reason(), onProgress: (event) => onProgress({ phase: 'dependencies', ...event }),
+        onAccepted: async (ids, progress) => { retainedDependencies = ids; await persist('running', progress); },
       });
       retainedDependencies = reduction.retained;
       dependencyAttempts = reduction.attempts; dependencyAccepted = reduction.accepted;
       attempts += reduction.attempts; accepted += reduction.accepted;
       if (!reduction.complete) terminationReason = reduction.terminationReason;
-      // Removing a local dependency can make its tarball/source files removable.
-      if (terminationReason === 'complete' && reduction.accepted) await reduceProjectFiles();
+      else phase = 'cleanup';
+      await persist(terminationReason === 'complete' ? 'running' : 'partial');
+    }
+    if (phase === 'cleanup' && terminationReason === 'complete') {
+      await reduceProjectFiles();
+      if (terminationReason === 'complete') phase = 'done';
+      await persist(terminationReason === 'complete' ? 'running' : 'partial');
     }
     const final = await observe(retained, retainedDependencies);
     if (!matchesPredicate(predicate, first.signature, final.result, final.cwd)) {
@@ -145,10 +184,11 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     }
     const signature = first.signature;
     const manifest = {
-      schemaVersion: 1, tool: { name: 'reprocapsule', version: '0.2.0' }, command,
+      schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
       failurePredicate: predicate,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
       sourceSnapshotId,
+      continuation: { resumed: Boolean(resumeState), priorReproductionAttempts: resumeState?.counters.reproductionAttempts ?? 0 },
       environment: { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, osRelease: os.release(), arch: process.arch },
       reduction: {
         originalFileCount: workspace.files.length, finalFileCount: retained.length,
@@ -182,6 +222,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     // trusts the node_modules or process-written files from any reduction attempt.
     const verification = await verifyCapsule({ capsule: destination, npm, npmPath, timeoutMs, installTimeoutMs, allowInstallScripts, offline });
     budget.runs++;
+    await persist(terminationReason === 'complete' ? 'complete' : 'partial');
     const elapsedMs = Math.round(performance.now() - started);
     onProgress({ phase: 'complete', output: destination, terminationReason });
     return { output: destination, manifest, verification, elapsedMs };
