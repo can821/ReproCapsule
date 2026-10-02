@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { main } from '../src/cli.js';
+import { main, cliExitCode } from '../src/cli.js';
 
 try { await main(); }
 catch (error) {
-  // Do not echo reproduction output, command strings or captured environment values.
-  const known = error.name === 'ReproError';
-  console.error(`ReproCapsule [${error.code ?? 'ERROR'}]: ${known ? error.message : 'Operation failed. Check paths, access and CLI options; see --help.'}`);
-  process.exitCode = 1;
+  const message = error.name === 'ReproError' ? error.message : 'Operation failed. Check paths, access and CLI options; see --help.';
+  const code = cliExitCode(error);
+  if (process.argv.includes('--json')) console.log(JSON.stringify({ success: false, code: error.code ?? 'ERROR', message, exitCode: code }));
+  else console.error(`ReproCapsule [${error.code ?? 'ERROR'}]: ${message}`);
+  process.exitCode = code;
 }

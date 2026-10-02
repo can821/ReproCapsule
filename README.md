@@ -1,61 +1,92 @@
 # ReproCapsule
 
-Reduce a failing Node.js/JavaScript project into a smaller reproduction while preserving a conservative failure signature. Zero runtime dependencies; Node.js 24+, macOS/Linux. Tested on macOS with Node 24.19.0.
+Reduce a failing Node.js/npm repository into a smaller, independently verifiable reproduction capsule. Node.js 24+, macOS/Linux; npm 9+ when packages are needed. No external runtime library dependencies. Tested on macOS with Node 24.19.0 and npm 10.9.2.
 
 ```sh
-node bin/reprocapsule.js reduce \
-  --repo ./broken-app \
-  --command 'node test/repro.js' \
-  --out ./capsule \
-  --timeout-ms 10000
-
+node bin/reprocapsule.js reduce --repo ./broken-app --command 'npm test' --out ./capsule
+node bin/reprocapsule.js verify ./capsule
 node --test test/*.test.js
 ```
 
-The output directory must be new and outside the source repository. The default is `./repro-capsule-output`. A nonzero exit code from the generated `sh ./reproduce.sh` is expected: it reproduces the bug. The reducer itself exits 0 on successful packaging.
+Output must be a new directory outside the source repository. npm must exist on PATH, or be supplied with `--npm-path /path/to/npm-cli.js` / `REPROCAPSULE_NPM`. The tool never downloads npm itself. Tests require npm; local package fixtures run offline.
 
-## How it works
+## Reduction and fresh verification
 
-1. Copy allowed files into a temporary snapshot. Never run the command in the source tree.
-2. Confirm the baseline twice in independent clean copies. Reject success, timeout, missing-module/setup errors, truncated output and unstable failures.
-3. Remove chunks of candidate files using a deterministic, complement-based ddmin strategy. Accept a removal only when its failure signature matches.
-4. Refine to individual removals, verify the retained set, and verify again with the generated capsule metadata present.
-5. Export original snapshot bytes, excluding writes made by the command. Clean up temporary workspaces on normal completion and handled errors.
+1. Snapshot allowed source files without `.git`, `node_modules`, known secret files or symlinks.
+2. Detect the npm project, validate root lock declarations, and use fresh `npm ci --ignore-scripts` installations in temporary copies. Lockfiles 2/3 are supported; yarn, pnpm, shrinkwrap and workspaces are rejected.
+3. Confirm the same failure in at least two independent clean runs.
+4. Remove file groups with a ddmin-inspired strategy. Protect manifests, locks, requested paths and currently needed local package assets.
+5. Reduce top-level declarations across `dependencies`, `devDependencies`, `optionalDependencies`. Preserve peers. npm updates the lock with `install --package-lock-only --ignore-scripts`; a fresh `npm ci` must then succeed. No handwritten transitive resolver.
+6. Revisit files made unnecessary by dependency removal. Verify the reduced input again.
+7. Generate the capsule with SHA-256 file hashes and metadata; copy that finished capsule into another temporary directory, install from scratch, and reproduce the failure. Only then report `CAPSULE VERIFIED`.
 
-The signature compares exit code plus the full normalized stdout/stderr transcript using SHA-256. ANSI codes, known workspace paths (including encoded file URLs), and narrowly recognized timing fields are normalized. Error messages, stack locations and other diagnostic changes stay significant. Unknown variations cause rejection. This is evidence of matching output, not a universal proof of identical semantics.
+The default predicate remains full normalized stdout/stderr plus nonzero exit code, hashed with SHA-256. ANSI colors, workspace paths/file URLs and narrowly recognized timing fields are normalized. Error messages and stack locations remain significant. Success, timeouts, signals and truncated output never match. Missing-module/setup errors cannot establish a baseline.
 
-Package manifests and npm/yarn/pnpm lockfiles are protected during file reduction. For a deterministic command, the result is **1-minimal**: no single remaining candidate file can be removed while keeping the signature. This is not a guarantee of the globally smallest subset.
+`--match-stderr 'target message' [--exit-code 1]` deliberately chooses a broader user-defined predicate. Variable diagnostics may then be accepted if that predicate stays true. `--baseline-runs 3` strengthens the repetition check; disagreement stops reduction.
 
-## Measured fixture demo
+For deterministic predicates the algorithm seeks phase-local 1-minimal sets, not a global minimum. Protected local package assets and control files are outside that claim.
+
+## Controls
+
+| Option | Meaning |
+| --- | --- |
+| `--command-timeout N` / `--timeout-ms N` | Per-command milliseconds; default 10000 |
+| `--install-timeout-ms N` | Milliseconds for one lock-update/install operation; default 60000 |
+| `--allow-install-scripts` | Explicit lifecycle-script opt-in; OFF by default, including verify |
+| `--offline` | npm offline mode; used by local fixture tests |
+| `--max-runs N` | Total reproduction runs, reserving baseline runs and two final verifications |
+| `--max-time N` | Reduction deadline in seconds; baseline and mandatory final verification may extend wall time |
+| `--keep config/runtime.json` | Protect exact relative file/directory; repeatable |
+| `--json` | Structured reduce/verify result, without progress text |
+
+Budget exhaustion exports the best state only after mandatory verification, marks it `PARTIAL`, and makes no minimality claim. A failed final verification produces no capsule. npm installs have separate timeouts and are not counted as reproduction runs. Repeated complete candidate outcomes are cached in memory for this run, keyed by files, dependencies, command and predicate; transient failures/timeouts are not cached. Final checks always bypass the cache. No checkpoint/resume.
+
+## Actual measured demos
 
 ```sh
-node bin/reprocapsule.js reduce --repo test/fixtures/broken-parser --command 'node test/repro.js' --out work/demo-capsule
-sh work/demo-capsule/reproduce.sh
+node bin/reprocapsule.js reduce --repo test/fixtures/broken-parser --command 'node test/repro.js' --out work/file-final --json
+node bin/reprocapsule.js reduce --repo test/fixtures/npm-dependencies --command 'npm test' --out work/npm-final --offline --json
+node bin/reprocapsule.js verify work/npm-final --offline --json
 ```
 
-Use a new output path for another run. The fixture intentionally throws `TypeError: Cannot read properties of undefined (reading 'trim')` when parsing a profile with a missing display name.
+Use a different output path if one already exists.
 
-| Measure | Observed result |
+| Measure | File-only fixture | npm fixture |
+| --- | --- | --- |
+| Eligible project files | 26 → 6 | 14 → 6 |
+| Top-level dependency declarations | 0 → 0 | 5 → 2 |
+| Reproduction executions | 33 | 22 |
+| Cached candidate results reused | 3 | 0 |
+| Elapsed on test machine | 840 ms | 5864 ms |
+| Fresh install | Not required | PASS, offline |
+| Same failure / original unchanged | PASS / PASS | PASS / PASS |
+
+The old fixture still retains the same four removable files plus two protected package files, with the same signature; caching saves three of the original 36 executions. One dummy `.env.example` is excluded. The npm fixture uses five tiny, self-contained local tarballs: two required packages and unused production/development/optional packages. Three declarations and their unused tarballs are removed. npm owns lockfile regeneration. All **37 tests pass**, including the unchanged original 22.
+
+Six retained project files plus three generated metadata/instruction files make nine capsule files. `capsule.json` records the command, predicate, source snapshot hash, per-file hashes, runtime/npm information, retained dependency declarations, exclusions, metrics and termination reason. Raw output and environment values are not stored. The manifest duration is explicitly measured before final verification; CLI JSON `elapsedMs` includes final verification. File hashes cover retained files and generated instructions, but not the self-referential manifest.
+
+## Verify and exit codes
+
+`verify` validates the recorded inventory and content hashes, then copies the capsule and installs/runs only in that fresh copy. The supplied capsule is not mutated. Hashes detect accidental corruption, not malicious replacement of both files and metadata. Verify executes the recorded trusted command; review capsules before running it. Older 0.1 capsules lack required integrity metadata and must be regenerated.
+
+| Exit | Meaning |
 | --- | --- |
-| Physical fixture files | 27 (one excluded `.env.example`, containing dummy data) |
-| Eligible project files | 26 → 6 |
-| Removable candidate files | 24 → 4 |
-| Project-file reduction | 76.92% |
-| Candidate executions / accepted removals | 32 / 7 |
-| Total executions in the pipeline | 36 (2 baseline + 32 candidate + 2 verification) |
-| Same failure / source unchanged | Both verified |
-| Automated tests | 22 passing |
+| 0 | Completed and verified |
+| 1 | Invalid input or unclassified operation error (existing CLI convention) |
+| 3 | Baseline does not reproduce |
+| 4 | Non-deterministic baseline |
+| 5 | Invalid/corrupted capsule or verification failure |
+| 6 | Package-manager, lockfile or install failure |
+| 7 | Verified partial capsule; reduction budget exhausted |
 
-The capsule contains six retained project files plus three generated files: `capsule.json`, `README.md` and `reproduce.sh`. If a source README is retained, instructions go in `README.reprocapsule.md`. The manifest records counts, signature digest, command, runtime/OS metadata, retained files and exclusions. It does not contain raw captured output or environment values. `durationBeforePackageVerificationMs` deliberately excludes the last packaged verification and clean re-export.
+A reproduction command's failing exit code is separate from the reducer's successful exit code.
 
-## Safety and current limits
+## Safety and limitations
 
-- The supplied command is **trusted local `/bin/sh` input**. It runs with your permissions and inherited environment. Workspaces prevent accidental reducer edits to source files; they are not security sandboxes. Commands can access absolute paths, network and external state. Use repository-relative commands, and never pass secrets inline in the command recorded in the capsule.
-- `.git`, `node_modules`, `.env*`, common credential/config files, keys, symlinks and special files are excluded. These are filename rules, not a complete secret scanner. Review a capsule before sharing it. Empty directories are not preserved.
-- No dependency installation or dependency reduction yet. Current reliable scope is self-contained Node projects or commands whose tools are already available. Setup errors are refused; V1 does not package missing-module bugs as target failures. Secret-dependent reproductions may not work after exclusions.
-- Commands must fail deterministically in clean copies. Two baseline runs help detect instability but cannot prove it absent. Random output, unexpected timing formats and environment-sensitive behavior can prevent reduction. The baseline is the sanitized copy, not an execution of the original tree.
-- Environment metadata helps diagnosis but does not recreate the full environment. Portability to other machines/OS versions is not guaranteed. macOS verified; Linux process-group support implemented but not tested here; Windows unsupported.
-- Timeout defaults to 10 seconds per execution, with process-group termination and a 1 MiB combined output limit. Deliberately detached processes can escape a group. A forcibly killed reducer may leave temporary files. There is no total-run budget/resume yet; reduction can be expensive for large projects.
-- Reserved source filenames: `capsule.json`, `reproduce.sh`, `README.reprocapsule.md`. Existing output is never overwritten. Keep the source stable while copying. The tool assumes ordinary trusted local filesystem use, not hostile concurrent filesystem changes.
+Commands and opted-in lifecycle scripts are **trusted local input, NOT sandboxed**. They retain user permissions and can access network, absolute paths and external state. ReproCapsule itself only installs/runs in copied workspaces and never modifies the source. npm installation uses an explicit copied-directory prefix, temporary cache, and empty temporary user/global npm config. Environment variables are inherited, not saved; private registry setups needing excluded config are not supported automatically.
 
-Next milestone: isolated dependency installation and reduction, with lockfile consistency and the existing failure-preservation tests kept passing.
+Secret exclusions are filename rules, not a complete content scanner. Never put credentials inline in the recorded command. Local `file:` dependencies must stay inside the repository; external paths and monorepo/workspace orchestration are unsupported. Empty directories and symlinks are not preserved. Keep source files stable while copying; this is not protection against hostile filesystem races.
+
+Offline fixture installs are verified; a broad public-registry/native-addon matrix is not. Installs with disabled scripts may not support native/build-time dependencies; opt in explicitly when trusted. Runtime/OS metadata does not recreate an entire machine. npm's declared `packageManager` is detected, but its exact version is not automatically installed. Windows is unsupported; Linux is implemented but not exercised here. Detached processes can escape a process group; forced termination may leave temporary files. Baseline repetitions do not prove absence of all flakiness. Strict transcript matching can reject otherwise equivalent failures.
+
+Next milestone: source-validated checkpoint/resume, preserving verified partial reductions across interruptions.
