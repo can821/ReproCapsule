@@ -21,6 +21,7 @@ Options:
   --match-stderr TEXT [--exit-code N]   Explicit broader failure predicate
   --max-runs N                        Total reproduction budget, including 2 final runs
   --max-time N                        Reduction deadline in seconds; final verification extra
+  --audit-minimality                  Fresh single-removal audit within the run budget
   --checkpoint PATH                   Atomic progress file outside source/output
   --keep RELATIVE_PATH                Protect a file/directory; repeatable
   --json                              Machine-readable result
@@ -41,7 +42,7 @@ export function cliExitCode(error) {
 export async function main(args = process.argv.slice(2)) {
   const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
-  for (const name of ['help', 'json', 'allow-install-scripts', 'offline']) options[name] = { type: 'boolean' };
+  for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
   const { values, positionals } = parseArgs({ args, allowPositionals: true, options });
   if (values.help) { console.log(help); return; }
@@ -70,7 +71,7 @@ export async function main(args = process.argv.slice(2)) {
   const result = await buildCapsule({
     repo: values.repo ? path.resolve(values.repo) : undefined, command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
     baselineRuns: positive('baseline-runs', 2), matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
-    maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint,
+    maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint, audit: values['audit-minimality'] ?? false,
     ...restored,
     onProgress(event) {
       if (values.json) return;
@@ -83,9 +84,10 @@ export async function main(args = process.argv.slice(2)) {
   const summary = { success: true, capsule: result.output, verified: result.verification.verified, complete: counts.complete,
     files: { before: counts.originalFileCount, after: counts.finalFileCount }, dependencies: { before: deps.originalCount, after: deps.finalCount },
     runs: counts.reproductionAttempts, cacheHits: counts.cacheHits, elapsedMs: result.elapsedMs,
-    terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
+    minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
   if (values.json) console.log(JSON.stringify(summary));
   else console.log(`Failure preserved\nProject files: ${counts.originalFileCount} -> ${counts.finalFileCount} (${counts.reductionPercentage}% reduction)\nDependencies: ${deps.originalCount} -> ${deps.finalCount}\nRuns: ${counts.reproductionAttempts}; cache hits: ${counts.cacheHits}; elapsed: ${result.elapsedMs} ms\n${counts.complete ? 'CAPSULE VERIFIED' : 'PARTIAL CAPSULE VERIFIED: ' + counts.terminationReason}\nCapsule created at ${result.output}`);
+  if (!values.json && result.manifest.minimality.requested) console.log(`Minimality audit: ${result.manifest.minimality.status}`);
   if (!counts.complete) process.exitCode = 7;
   return summary;
 }

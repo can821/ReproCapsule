@@ -12,6 +12,7 @@ import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
 import { ReductionBudget } from './budget.js';
+import { outcomeOf, retainedExplanations, auditMinimality } from './evidence.js';
 import { checkpointPath, writeCheckpoint, toolVersion } from './checkpoint.js';
 
 function infrastructureFailure(result) {
@@ -22,7 +23,7 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState }) {
+  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false }) {
   const started = performance.now();
   const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
   const predicate = createPredicate({ matchStderr, exitCode });
@@ -119,7 +120,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (!checkpointFile) return;
       await writeCheckpoint(checkpointFile, {
         schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
-        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline },
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit },
         acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase },
         counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
           candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },
@@ -129,21 +130,21 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     }
     await persist();
     onProgress({ phase: 'baseline', candidates: candidates.length, baselineRuns, predicate: predicate.type });
-    async function preserves(files, ids) {
-      const key = JSON.stringify([[...files].sort(), [...ids].sort(), command, predicate]);
-      if (cache.has(key)) { cacheHits++; return cache.get(key); }
+    const candidateKey = (files, ids) => JSON.stringify([[...files].sort(), [...ids].sort(), command, predicate]);
+    async function evaluate(files, ids, fresh = false) {
+      const key = candidateKey(files, ids);
+      if (!fresh && cache.has(key)) { cacheHits++; return cache.get(key); }
       let observed;
       try { observed = await observe(files, ids, true); }
       catch (error) {
-        // A candidate that cannot install is not a preserving candidate. Do not cache
-        // potentially transient installation failures or timeouts.
-        if (['INSTALL_FAILED', 'INVALID_LOCKFILE', 'INSTALL_TIMEOUT', 'INSTALL_OUTPUT_LIMIT'].includes(error.code)) return false;
+        if (['INSTALL_FAILED', 'INVALID_LOCKFILE', 'INSTALL_TIMEOUT', 'INSTALL_OUTPUT_LIMIT'].includes(error.code)) return { matches: false, conclusive: false, reason: error.code };
         throw error;
       }
-      const matches = matchesPredicate(predicate, first.signature, observed.result, observed.cwd);
-      if (!observed.result.timedOut && !observed.result.outputExceeded && !observed.result.signal) cache.set(key, matches);
-      return matches;
+      const outcome = outcomeOf(observed.result, matchesPredicate(predicate, first.signature, observed.result, observed.cwd));
+      if (outcome.conclusive) cache.set(key, outcome);
+      return outcome;
     }
+    const preserves = async (files, ids) => (await evaluate(files, ids)).matches;
     async function reduceProjectFiles() {
       const localPaths = npm ? localReferences(selectDependencies(manager.pkg, retainedDependencies)) : [];
       const fixed = retained.filter((file) => protectedFiles.includes(file) || localPaths.some((entry) => under(file, entry)));
@@ -178,6 +179,17 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (terminationReason === 'complete') phase = 'done';
       await persist(terminationReason === 'complete' ? 'running' : 'partial');
     }
+    const localPaths = npm ? localReferences(selectDependencies(manager.pkg, retainedDependencies)) : [];
+    const fixed = retained.filter((file) => protectedFiles.includes(file) || localPaths.some((entry) => under(file, entry)));
+    const auditStartRuns = budget.runs;
+    const auditResult = audit ? await auditMinimality({ files: retained, dependencies: retainedDependencies, protectedFiles: fixed,
+      evaluate: (files, ids) => evaluate(files, ids, true), shouldStop: () => budget.reason() }) :
+      { metadata: { requested: false, status: 'NOT PROVEN', level: 'not-audited' }, evidence: {} };
+    auditResult.metadata.reproductionRuns = budget.runs - auditStartRuns;
+    if (auditResult.metadata.terminationReason) terminationReason = auditResult.metadata.terminationReason;
+    const explanations = retainedExplanations({ files: retained, dependencies: retainedDependencies,
+      control: retained.filter(isControlFile), protectedFiles: fixed, peerNames: Object.keys(manager.pkg?.peerDependencies ?? {}),
+      lookup: (files, ids) => cache.get(candidateKey(files, ids)), auditEvidence: auditResult.evidence });
     const final = await observe(retained, retainedDependencies);
     if (!matchesPredicate(predicate, first.signature, final.result, final.cwd)) {
       throw new ReproError('FINAL_VERIFICATION_FAILED', 'The reduced file set did not reproduce reliably.');
@@ -187,7 +199,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
       failurePredicate: predicate,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
-      sourceSnapshotId,
+      sourceSnapshotId, explanations, minimality: auditResult.metadata,
       continuation: { resumed: Boolean(resumeState), priorReproductionAttempts: resumeState?.counters.reproductionAttempts ?? 0 },
       environment: { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, osRelease: os.release(), arch: process.arch },
       reduction: {
