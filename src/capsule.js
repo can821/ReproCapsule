@@ -12,6 +12,7 @@ import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
 import { ReductionBudget } from './budget.js';
+import { persistentCache, environmentIdentity } from './candidate-cache.js';
 import { outcomeOf, retainedExplanations, auditMinimality } from './evidence.js';
 import { checkpointPath, writeCheckpoint, toolVersion } from './checkpoint.js';
 
@@ -23,12 +24,13 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false }) {
+  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir }) {
   const started = performance.now();
   const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
   const predicate = createPredicate({ matchStderr, exitCode });
   const destination = await validateOutput(repo, output);
   const checkpointFile = checkpoint ? await checkpointPath(repo, checkpoint, destination, Boolean(resumeState)) : null;
+  const cacheDirectory = cacheDir ? path.dirname(await checkpointPath(repo, path.join(cacheDir, '.location-check'), destination, true)) : null;
   const workspace = await createWorkspace(repo);
   let outputCreated = false;
   try {
@@ -65,7 +67,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
           protectedFiles.some((file) => !retained.includes(file))) throw new ReproError('INVALID_CHECKPOINT', 'Checkpoint items are inconsistent with the source/protection policy.');
     }
     const packageStates = new Map(), cache = new Map();
-    let cacheHits = 0, installCount = 0, attempts = 0, accepted = 0;
+    let cacheHits = 0, cacheMisses = 0, persistentCacheHits = 0, installCount = 0, attempts = 0, accepted = 0;
     let dependencyAttempts = 0, dependencyAccepted = 0, terminationReason = 'complete';
     const packageKey = (ids) => JSON.stringify([...ids].sort());
     if (npm) packageStates.set(packageKey(originalDependencies), {
@@ -116,16 +118,18 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       }
     }
     const acceptedFailure = { version: first.signature.version, strategy: first.signature.strategy, digest: first.signature.digest, exitCode: first.signature.exitCode };
+    const diskCache = await persistentCache(cacheDirectory, { toolVersion, sourceSnapshotId, runtime, command, predicate, acceptedFailure,
+      timeoutMs, installTimeoutMs, allowInstallScripts, offline, environment: environmentIdentity() });
     async function persist(status = 'running', progress = {}) {
       if (!checkpointFile) return;
       await writeCheckpoint(checkpointFile, {
         schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
-        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit },
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory },
         acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase },
         counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
           candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },
         budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null },
-        cachePolicy: 'not-persisted: revalidate in a fresh environment', status, updatedAt: new Date().toISOString(),
+        cachePolicy: cacheDirectory ? 'scope-validated-persistent-outcomes' : 'run-local-only', status, updatedAt: new Date().toISOString(),
       });
     }
     await persist();
@@ -134,6 +138,11 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     async function evaluate(files, ids, fresh = false) {
       const key = candidateKey(files, ids);
       if (!fresh && cache.has(key)) { cacheHits++; return cache.get(key); }
+      if (!fresh) {
+        const saved = await diskCache.get(key);
+        if (saved) { cacheHits++; persistentCacheHits++; cache.set(key, saved); return saved; }
+        cacheMisses++;
+      }
       let observed;
       try { observed = await observe(files, ids, true); }
       catch (error) {
@@ -141,7 +150,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
         throw error;
       }
       const outcome = outcomeOf(observed.result, matchesPredicate(predicate, first.signature, observed.result, observed.cwd));
-      if (outcome.conclusive) cache.set(key, outcome);
+      if (outcome.conclusive) { cache.set(key, outcome); await diskCache.set(key, outcome); }
       return outcome;
     }
     const preserves = async (files, ids) => (await evaluate(files, ids)).matches;
@@ -207,10 +216,10 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
         originalCandidateCount: candidates.length, finalCandidateCount: retained.filter((file) => !protectedFiles.includes(file)).length,
         reductionPercentage: Number(((workspace.files.length - retained.length) / Math.max(1, workspace.files.length) * 100).toFixed(2)),
         candidateAttempts: attempts, acceptedReductions: accepted, reproductionAttempts: budget.runs + 1,
-        cacheHits, installCount: installCount + (npm ? 1 : 0), baselineRuns,
+        cacheHits, cacheMisses, persistentCacheHits, installCount: installCount + (npm ? 1 : 0), baselineRuns,
         durationBeforePackageVerificationMs: Math.round(performance.now() - started), terminationReason,
         complete: terminationReason === 'complete',
-        guarantee: terminationReason === 'complete' ? 'phase-local 1-minimal sets for a deterministic predicate; protected files and peers retained; no global minimum claim' : 'PARTIAL: best verified state; no minimality claim',
+        guarantee: terminationReason === 'complete' ? (auditResult.metadata.status === 'PASS' ? '1-minimal with respect to the audited candidate set; no global minimum claim' : 'reduction complete; 1-minimality not certified without a passing audit') : 'PARTIAL: best verified state; no minimality claim',
       },
       budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null, finalVerificationReservedRuns: 2 },
       retainedFiles: retained, protectedFiles, userProtectedPaths: keep, exclusions: workspace.exclusions,

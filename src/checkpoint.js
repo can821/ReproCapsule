@@ -65,7 +65,7 @@ export async function resumeOptions(file, { allowInstallScripts = false } = {}) 
   // Only explicitly supported configuration fields are restored.
   const c = checkpoint.config;
   return { repo: checkpoint.source, command: c.command, timeoutMs: c.timeoutMs, installTimeoutMs: c.installTimeoutMs,
-    baselineRuns: c.baselineRuns, matchStderr: c.matchStderr, exitCode: c.exitCode, keep: c.keep, audit: c.audit ?? false,
+    baselineRuns: c.baselineRuns, matchStderr: c.matchStderr, exitCode: c.exitCode, keep: c.keep, audit: c.audit ?? false, cacheDir: c.cacheDir,
     allowInstallScripts: c.allowInstallScripts, offline: c.offline,
     checkpoint: file, resumeState: checkpoint };
 }
