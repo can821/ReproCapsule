@@ -2,6 +2,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildCapsule } from './capsule.js';
 import { verifyCapsule } from './verify.js';
+import { verifyFix } from './verify-fix.js';
 import { bisectRegression } from './bisect.js';
 import { resumeOptions } from './checkpoint.js';
 import { ReproError } from './errors.js';
@@ -10,6 +11,7 @@ const help = `ReproCapsule — reduce and independently verify failing npm proje
 
   reprocapsule reduce --repo PATH --command 'node test/repro.js' --out PATH
   reprocapsule bisect --repo PATH --good REF --bad REF --command COMMAND
+  reprocapsule verify-fix CAPSULE --patch FILE [--test-command COMMAND]
   reprocapsule verify CAPSULE
   reprocapsule resume CHECKPOINT --out NEW_PATH
 
@@ -45,7 +47,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -68,6 +70,12 @@ export async function main(args = process.argv.slice(2)) {
       maxRuns: positive('max-runs', 32), maxTimeMs: positive('max-time', 120) * 1000 });
     console.log(values.json ? JSON.stringify(result) : result.status === 'FOUND' ? `First tested bad commit identified by bisect: ${result.firstTestedBadCommit}` : `Bisect: ${result.status}`);
     if (!result.success) process.exitCode = result.status === 'BUDGET EXHAUSTED' ? 7 : 5;
+    return result;
+  }
+  if (positionals[0] === 'verify-fix' && positionals.length === 2) {
+    const result = await verifyFix({ capsule: path.resolve(positionals[1]), patch: values.patch, testCommand: values['test-command'], ...common });
+    console.log(values.json ? JSON.stringify(result) : `${result.status}\nBroader test suite: ${result.broaderTests}`);
+    if (!result.success) process.exitCode = 5;
     return result;
   }
   if (positionals[0] === 'verify' && positionals.length === 2) {
