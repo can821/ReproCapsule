@@ -40,3 +40,15 @@ test('unsafe/malformed patches are rejected before execution; timeouts remain in
   }
   assert.equal((await check(f, replacement('setInterval(() => {}, 1000);'), { timeoutMs: 200 })).status, 'INCONCLUSIVE');
 });
+
+test('patched npm capsules receive independent offline clean installs', async (t) => {
+  const { fileURLToPath } = await import('node:url');
+  const root = await temporary(t), capsule = path.join(root, 'capsule');
+  await buildCapsule({ repo: fileURLToPath(new URL('./fixtures/npm-dependencies', import.meta.url)), output: capsule, command: 'npm test', offline: true, maxRuns: 4 });
+  const before = await fingerprint(capsule), patch = path.join(root, 'fix.patch');
+  await writeFile(patch, 'diff --git a/repro.cjs b/repro.cjs\n--- a/repro.cjs\n+++ b/repro.cjs\n@@ -4 +4 @@\n-parse(prepare(input));\n+process.exitCode = 0;\n');
+  const result = await verifyFix({ capsule, patch, offline: true });
+  assert.equal(result.baseline.install, 'pass');
+  assert.equal(result.status, 'TARGET FAILURE REMOVED');
+  assert.equal(await fingerprint(capsule), before);
+});
