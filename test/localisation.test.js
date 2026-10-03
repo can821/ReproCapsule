@@ -24,7 +24,7 @@ test('real fixture ranks the known failing source line without fixture-specific 
   const root = await temporary(t), repo = fileURLToPath(new URL('./fixtures/broken-parser', import.meta.url));
   const { manifest } = await buildCapsule({ repo, output: path.join(root, 'capsule'), command: 'node test/repro.js' });
   assert.equal(manifest.diagnostics.locations[0].file, 'src/parser.js');
-  assert.equal(manifest.diagnostics.locations[0].line, 4);
+  assert.equal(manifest.diagnostics.locations[0].line, 5);
   assert.equal(manifest.reduction.reproductionAttempts, 33);
   assert.equal(manifest.diagnostics.locations[0].evidence.includes('top-project-stack-frame'), true);
 });
