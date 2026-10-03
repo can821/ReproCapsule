@@ -1,0 +1,392 @@
+{
+  "scope": "Controlled local fixtures; single performance samples, not general throughput guarantees",
+  "runtime": {
+    "node": "24.19.0",
+    "npm": "10.9.2",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "tests": {
+    "passed": 60,
+    "failed": 0,
+    "skipped": 0
+  },
+  "file": {
+    "success": true,
+    "verified": true,
+    "complete": true,
+    "files": {
+      "before": 26,
+      "after": 6
+    },
+    "dependencies": {
+      "before": 0,
+      "after": 0
+    },
+    "runs": 37,
+    "cacheHits": 3,
+    "cacheMisses": 29,
+    "persistentCacheHits": 0,
+    "elapsedMs": 1155,
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+      "locations": [
+        {
+          "file": "src/parser.js",
+          "line": 5,
+          "column": 52,
+          "stackDepth": 0,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        },
+        {
+          "file": "test/repro.js",
+          "line": 6,
+          "column": 18,
+          "stackDepth": 1,
+          "evidence": [
+            "deeper-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ]
+    },
+    "inputReduction": null,
+    "minimality": {
+      "requested": true,
+      "status": "PASS",
+      "level": "1-minimal",
+      "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+      "candidateCount": 4,
+      "auditedCandidates": 4,
+      "individuallyRequired": 4,
+      "excludedFiles": [
+        "package-lock.json",
+        "package.json"
+      ],
+      "terminationReason": null,
+      "reproductionRuns": 4
+    },
+    "terminationReason": "complete",
+    "failureDigest": "2b5ccb11222def1ed63de9ed7ce6aad977e2c9311c220a8abd0958b7cd211d2a"
+  },
+  "cached": {
+    "success": true,
+    "verified": true,
+    "complete": true,
+    "files": {
+      "before": 26,
+      "after": 6
+    },
+    "dependencies": {
+      "before": 0,
+      "after": 0
+    },
+    "runs": 8,
+    "cacheHits": 32,
+    "cacheMisses": 0,
+    "persistentCacheHits": 29,
+    "elapsedMs": 242,
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+      "locations": [
+        {
+          "file": "src/parser.js",
+          "line": 5,
+          "column": 52,
+          "stackDepth": 0,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        },
+        {
+          "file": "test/repro.js",
+          "line": 6,
+          "column": 18,
+          "stackDepth": 1,
+          "evidence": [
+            "deeper-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ]
+    },
+    "inputReduction": null,
+    "minimality": {
+      "requested": true,
+      "status": "PASS",
+      "level": "1-minimal",
+      "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+      "candidateCount": 4,
+      "auditedCandidates": 4,
+      "individuallyRequired": 4,
+      "excludedFiles": [
+        "package-lock.json",
+        "package.json"
+      ],
+      "terminationReason": null,
+      "reproductionRuns": 4
+    },
+    "terminationReason": "complete",
+    "failureDigest": "2b5ccb11222def1ed63de9ed7ce6aad977e2c9311c220a8abd0958b7cd211d2a"
+  },
+  "npm": {
+    "success": true,
+    "verified": true,
+    "complete": true,
+    "files": {
+      "before": 14,
+      "after": 6
+    },
+    "dependencies": {
+      "before": 5,
+      "after": 2
+    },
+    "runs": 26,
+    "cacheHits": 0,
+    "cacheMisses": 18,
+    "persistentCacheHits": 0,
+    "elapsedMs": 6674,
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+      "locations": [
+        {
+          "file": "repro.cjs",
+          "line": 4,
+          "column": 1,
+          "stackDepth": 1,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ]
+    },
+    "inputReduction": null,
+    "minimality": {
+      "requested": true,
+      "status": "PASS",
+      "level": "1-minimal",
+      "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+      "candidateCount": 4,
+      "auditedCandidates": 4,
+      "individuallyRequired": 4,
+      "excludedFiles": [
+        "package-lock.json",
+        "package.json",
+        "vendor/helper.tgz",
+        "vendor/parser.tgz"
+      ],
+      "terminationReason": null,
+      "reproductionRuns": 4
+    },
+    "terminationReason": "complete",
+    "failureDigest": "4d6b31ef38e709920deed5c39d72d7b75f7c907467849cfb2629b52370eaf315"
+  },
+  "json": {
+    "success": true,
+    "verified": true,
+    "complete": true,
+    "files": {
+      "before": 2,
+      "after": 2
+    },
+    "dependencies": {
+      "before": 0,
+      "after": 0
+    },
+    "runs": 28,
+    "cacheHits": 4,
+    "cacheMisses": 23,
+    "persistentCacheHits": 0,
+    "elapsedMs": 595,
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+      "locations": [
+        {
+          "file": "repro.cjs",
+          "line": 5,
+          "column": 9,
+          "stackDepth": 0,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ]
+    },
+    "inputReduction": {
+      "file": "request.json",
+      "originalBytes": 21813,
+      "finalBytes": 58,
+      "originalStructure": {
+        "objects": 85,
+        "properties": 211,
+        "arrays": 43,
+        "elements": 244
+      },
+      "finalStructure": {
+        "objects": 3,
+        "properties": 4,
+        "arrays": 1,
+        "elements": 1
+      },
+      "attempts": 26,
+      "acceptedReductions": 10,
+      "terminationReason": "complete",
+      "complete": true
+    },
+    "minimality": {
+      "requested": true,
+      "status": "PASS",
+      "level": "1-minimal",
+      "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+      "candidateCount": 1,
+      "auditedCandidates": 1,
+      "individuallyRequired": 1,
+      "excludedFiles": [
+        "request.json"
+      ],
+      "terminationReason": null,
+      "reproductionRuns": 1
+    },
+    "terminationReason": "complete",
+    "failureDigest": "ab2147187dda36fad062f9f8344c69882bb24f81140a406be764647945d3c142"
+  },
+  "verify": {
+    "success": true,
+    "integrity": "pass",
+    "install": "not-required",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "npm-verify": {
+    "success": true,
+    "integrity": "pass",
+    "install": "pass",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "debug-proof": {
+    "bisect": {
+      "command": "node bin/reprocapsule.js bisect --repo work/professional-history --good e99be04936eec4a9f691a7c8de52cbd478f4a5c4 --bad dc16665e394a2cbf9c7e372afb3c48de60929742 --command 'node app.cjs' --json",
+      "success": true,
+      "status": "FOUND",
+      "good": "e99be04936eec4a9f691a7c8de52cbd478f4a5c4",
+      "bad": "dc16665e394a2cbf9c7e372afb3c48de60929742",
+      "evaluated": [
+        {
+          "commit": "dc16665e394a2cbf9c7e372afb3c48de60929742",
+          "classification": "bad",
+          "reason": "baseline"
+        },
+        {
+          "commit": "dc16665e394a2cbf9c7e372afb3c48de60929742",
+          "classification": "bad",
+          "reason": "baseline-repeat"
+        },
+        {
+          "commit": "e99be04936eec4a9f691a7c8de52cbd478f4a5c4",
+          "classification": "good",
+          "reason": "good-boundary"
+        },
+        {
+          "commit": "742f5cb10e0040f3f47b2a844f992f3ba504d1a1",
+          "classification": "bad",
+          "reason": "predicate-result"
+        },
+        {
+          "commit": "b2c057166dea013a79358417eb104351e7c9cbfe",
+          "classification": "good",
+          "reason": "predicate-result"
+        }
+      ],
+      "reproductionRuns": 5,
+      "evaluationAttempts": 5,
+      "elapsedMs": 303,
+      "failurePredicate": {
+        "type": "strict"
+      },
+      "firstTestedBadCommit": "742f5cb10e0040f3f47b2a844f992f3ba504d1a1",
+      "meaning": "First tested bad commit identified by native git bisect; not proof of causation.",
+      "expectedCommit": "742f5cb10e0040f3f47b2a844f992f3ba504d1a1",
+      "sourceUnchanged": true
+    },
+    "patch": {
+      "command": "node bin/reprocapsule.js verify-fix work/professional-file --patch work/professional-fix.patch --test-command 'node test/repro.js' --json",
+      "success": true,
+      "status": "TARGET FAILURE REMOVED",
+      "baseline": {
+        "success": true,
+        "integrity": "pass",
+        "install": "not-required",
+        "failure": "pass",
+        "verified": true,
+        "exitCode": 1
+      },
+      "broaderTests": "PASS",
+      "meaning": "Evidence about these commands only; does not prove the bug is completely fixed.",
+      "capsuleUnchanged": true
+    }
+  },
+  "benchmarks": [
+    {
+      "size": 100,
+      "candidates": 100,
+      "retainedFiles": 2,
+      "runs": 36,
+      "cacheHits": 4,
+      "acceptedReductions": 11,
+      "elapsedMs": 907,
+      "verified": true,
+      "sourceUnchanged": true
+    },
+    {
+      "size": 500,
+      "candidates": 500,
+      "retainedFiles": 2,
+      "runs": 49,
+      "cacheHits": 3,
+      "acceptedReductions": 15,
+      "elapsedMs": 1848,
+      "verified": true,
+      "sourceUnchanged": true
+    },
+    {
+      "size": 2000,
+      "candidates": 2000,
+      "retainedFiles": 2,
+      "runs": 59,
+      "cacheHits": 5,
+      "acceptedReductions": 19,
+      "elapsedMs": 4260,
+      "verified": true,
+      "sourceUnchanged": true
+    }
+  ]
+}
