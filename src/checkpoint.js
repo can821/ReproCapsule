@@ -5,7 +5,7 @@ import { ReproError } from './errors.js';
 import { validateOutput } from './workspace.js';
 
 export const toolVersion = '0.3.0';
-const phases = ['files', 'dependencies', 'cleanup', 'done'];
+const phases = ['files', 'dependencies', 'cleanup', 'input', 'done'];
 export async function readCheckpoint(file) {
   let checkpoint;
   try {
@@ -65,7 +65,7 @@ export async function resumeOptions(file, { allowInstallScripts = false } = {}) 
   // Only explicitly supported configuration fields are restored.
   const c = checkpoint.config;
   return { repo: checkpoint.source, command: c.command, timeoutMs: c.timeoutMs, installTimeoutMs: c.installTimeoutMs,
-    baselineRuns: c.baselineRuns, matchStderr: c.matchStderr, exitCode: c.exitCode, keep: c.keep, audit: c.audit ?? false, cacheDir: c.cacheDir,
+    baselineRuns: c.baselineRuns, matchStderr: c.matchStderr, exitCode: c.exitCode, keep: c.keep, audit: c.audit ?? false, cacheDir: c.cacheDir, reduceInput: c.reduceInput, inputMaxRuns: c.inputMaxRuns ?? 200,
     allowInstallScripts: c.allowInstallScripts, offline: c.offline,
     checkpoint: file, resumeState: checkpoint };
 }

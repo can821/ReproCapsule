@@ -12,6 +12,7 @@ import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
 import { ReductionBudget } from './budget.js';
+import { loadJsonInput } from './json-input.js';
 import { persistentCache, environmentIdentity } from './candidate-cache.js';
 import { outcomeOf, retainedExplanations, auditMinimality } from './evidence.js';
 import { checkpointPath, writeCheckpoint, toolVersion } from './checkpoint.js';
@@ -24,7 +25,7 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir }) {
+  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200 }) {
   const started = performance.now();
   const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
   const predicate = createPredicate({ matchStderr, exitCode });
@@ -54,7 +55,9 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     const commandEnv = commandNpm ? await npmEnvironment(commandNpm, workspace.root) : {};
     const runtime = { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, arch: process.arch };
     if (resumeState && JSON.stringify(runtime) !== JSON.stringify(resumeState.runtime)) throw new ReproError('CHECKPOINT_INCOMPATIBLE', 'Runtime changed; start a new reduction.');
-    const protectedFiles = workspace.files.filter((file) => isControlFile(file) || keep.some((entry) => under(file, entry)));
+    const input = await loadJsonInput(workspace.snapshot, workspace.files, reduceInput, resumeState?.state.input);
+    let inputMetrics = input ? { ...input.metrics, attempts: 0, acceptedReductions: 0, complete: resumeState?.state.phase === 'done', terminationReason: 'not-run-this-session' } : null;
+    const protectedFiles = workspace.files.filter((file) => isControlFile(file) || file === input?.file || keep.some((entry) => under(file, entry)));
     const candidates = workspace.files.filter((file) => !protectedFiles.includes(file));
     const originalDependencies = manager.ids;
     let retainedDependencies = [...originalDependencies], retained = [...workspace.files];
@@ -82,9 +85,10 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       } else await writePackageSelection(cwd, manager.pkg, ids);
       return Boolean(state);
     }
-    async function observe(files, ids, reduction = false) {
+    async function observe(files, ids, reduction = false, inputText = input?.content) {
       if (reduction && budget.reason()) throw budget.exhausted();
       const cwd = await workspace.materialize(files);
+      if (input && files.includes(input.file)) await writeFile(path.join(cwd, input.file), inputText);
       if (npm) {
         const knownLock = await applyPackage(cwd, ids);
         try {
@@ -119,13 +123,13 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     }
     const acceptedFailure = { version: first.signature.version, strategy: first.signature.strategy, digest: first.signature.digest, exitCode: first.signature.exitCode };
     const diskCache = await persistentCache(cacheDirectory, { toolVersion, sourceSnapshotId, runtime, command, predicate, acceptedFailure,
-      timeoutMs, installTimeoutMs, allowInstallScripts, offline, environment: environmentIdentity() });
+      timeoutMs, installTimeoutMs, allowInstallScripts, offline, environment: environmentIdentity(), reduceInput });
     async function persist(status = 'running', progress = {}) {
       if (!checkpointFile) return;
       await writeCheckpoint(checkpointFile, {
         schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
-        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory },
-        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase },
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns },
+        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase, input: input?.state },
         counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
           candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },
         budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null },
@@ -134,9 +138,9 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     }
     await persist();
     onProgress({ phase: 'baseline', candidates: candidates.length, baselineRuns, predicate: predicate.type });
-    const candidateKey = (files, ids) => JSON.stringify([[...files].sort(), [...ids].sort(), command, predicate]);
-    async function evaluate(files, ids, fresh = false) {
-      const key = candidateKey(files, ids);
+    const candidateKey = (files, ids, inputText = input?.content) => JSON.stringify([[...files].sort(), [...ids].sort(), command, predicate, inputText === undefined ? null : snapshotId(inputText)]);
+    async function evaluate(files, ids, fresh = false, inputText = input?.content) {
+      const key = candidateKey(files, ids, inputText);
       if (!fresh && cache.has(key)) { cacheHits++; return cache.get(key); }
       if (!fresh) {
         const saved = await diskCache.get(key);
@@ -144,7 +148,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
         cacheMisses++;
       }
       let observed;
-      try { observed = await observe(files, ids, true); }
+      try { observed = await observe(files, ids, true, inputText); }
       catch (error) {
         if (['INSTALL_FAILED', 'INVALID_LOCKFILE', 'INSTALL_TIMEOUT', 'INSTALL_OUTPUT_LIMIT'].includes(error.code)) return { matches: false, conclusive: false, reason: error.code };
         throw error;
@@ -168,7 +172,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     }
     if (phase === 'files') {
       await reduceProjectFiles();
-      if (terminationReason === 'complete') phase = npm ? 'dependencies' : 'done';
+      if (terminationReason === 'complete') phase = npm ? 'dependencies' : input ? 'input' : 'done';
       await persist(terminationReason === 'complete' ? 'running' : 'partial');
     }
     if (phase === 'dependencies' && terminationReason === 'complete') {
@@ -185,7 +189,16 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     }
     if (phase === 'cleanup' && terminationReason === 'complete') {
       await reduceProjectFiles();
-      if (terminationReason === 'complete') phase = 'done';
+      if (terminationReason === 'complete') phase = input ? 'input' : 'done';
+      await persist(terminationReason === 'complete' ? 'running' : 'partial');
+    }
+    if (phase === 'input' && terminationReason === 'complete') {
+      inputMetrics = await input.reduce(async (text) => (await evaluate(retained, retainedDependencies, false, text)).matches, {
+        shouldStop: () => budget.reason(), maxAttempts: inputMaxRuns,
+        onAccepted: async () => { await persist(); onProgress({ phase: 'input', bytes: input.metrics.finalBytes }); },
+      });
+      if (inputMetrics.complete) phase = 'done';
+      else terminationReason = inputMetrics.terminationReason;
       await persist(terminationReason === 'complete' ? 'running' : 'partial');
     }
     const localPaths = npm ? localReferences(selectDependencies(manager.pkg, retainedDependencies)) : [];
@@ -208,7 +221,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
       failurePredicate: predicate,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
-      sourceSnapshotId, explanations, minimality: auditResult.metadata,
+      sourceSnapshotId, inputReduction: inputMetrics, explanations, minimality: auditResult.metadata,
       continuation: { resumed: Boolean(resumeState), priorReproductionAttempts: resumeState?.counters.reproductionAttempts ?? 0 },
       environment: { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, osRelease: os.release(), arch: process.arch },
       reduction: {
@@ -232,6 +245,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     await mkdir(destination); outputCreated = true;
     await copyFiles(workspace.snapshot, destination, retained);
     if (npm) await applyPackage(destination, retainedDependencies);
+    if (input) await writeFile(path.join(destination, input.file), input.content);
     const readmeName = retained.includes('README.md') ? 'README.reprocapsule.md' : 'README.md';
     manifest.generatedFiles = ['capsule.json', readmeName, 'reproduce.sh'];
     const installInstruction = npm ? `First run npm ci${allowInstallScripts ? '' : ' --ignore-scripts'} (scripts ${allowInstallScripts ? 'explicitly enabled' : 'disabled'}).\n` : '';
