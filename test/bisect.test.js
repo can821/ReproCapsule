@@ -43,3 +43,16 @@ test('untestable middle commit yields ambiguity, and run budgets never fabricate
   assert.equal(budgeted.status, 'BUDGET EXHAUSTED');
   assert.equal(budgeted.firstTestedBadCommit, undefined);
 });
+
+test('Git helper ignores inherited repository redirection and config injection', async (t) => {
+  const root = await temporary(t);
+  const saved = { GIT_DIR: process.env.GIT_DIR, GIT_CONFIG_COUNT: process.env.GIT_CONFIG_COUNT };
+  try {
+    process.env.GIT_DIR = path.join(root, 'outside-git');
+    process.env.GIT_CONFIG_COUNT = 'invalid';
+    await git(root, ['init', '--quiet']);
+    assert.equal((await git(root, ['rev-parse', '--absolute-git-dir'])).stdout.trim(), path.join(await import('node:fs/promises').then((fs) => fs.realpath(root)), '.git'));
+  } finally {
+    for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+  }
+});
