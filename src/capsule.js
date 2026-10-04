@@ -12,7 +12,7 @@ import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
 import { ReductionBudget } from './budget.js';
-import { localiseStack } from './localisation.js';
+import { localiseWithSourceMaps } from './source-maps.js';
 import { loadJsonInput } from './json-input.js';
 import { persistentCache, environmentIdentity } from './candidate-cache.js';
 import { outcomeOf, retainedExplanations, auditMinimality } from './evidence.js';
@@ -222,7 +222,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
       failurePredicate: predicate,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
-      sourceSnapshotId, diagnostics: localiseStack(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, explanations, minimality: auditResult.metadata,
+      sourceSnapshotId, diagnostics: await localiseWithSourceMaps(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, explanations, minimality: auditResult.metadata,
       continuation: { resumed: Boolean(resumeState), priorReproductionAttempts: resumeState?.counters.reproductionAttempts ?? 0 },
       environment: { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, osRelease: os.release(), arch: process.arch },
       reduction: {

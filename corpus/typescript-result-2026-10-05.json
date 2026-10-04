@@ -1,0 +1,105 @@
+{
+  "tool": {
+    "name": "typescript",
+    "version": "5.8.3",
+    "commit": "68cead182cc24afdc3f1ce7c8ff5853aba14b65a",
+    "license": "Apache-2.0",
+    "url": "https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz",
+    "integrity": "sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ=="
+  },
+  "runtime": "v24.19.0",
+  "command": "npm test",
+  "reduction": {
+    "originalFileCount": 7,
+    "finalFileCount": 6,
+    "originalCandidateCount": 5,
+    "finalCandidateCount": 4,
+    "reductionPercentage": 14.29,
+    "candidateAttempts": 14,
+    "acceptedReductions": 1,
+    "reproductionAttempts": 17,
+    "cacheHits": 5,
+    "cacheMisses": 9,
+    "persistentCacheHits": 0,
+    "installCount": 17,
+    "baselineRuns": 2,
+    "durationBeforePackageVerificationMs": 9841,
+    "terminationReason": "complete",
+    "complete": true,
+    "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+  },
+  "dependencies": {
+    "status": "reduced",
+    "installationPerformed": true,
+    "originalCount": 1,
+    "finalCount": 1,
+    "retained": [
+      "devDependencies:typescript"
+    ],
+    "original": [
+      "devDependencies:typescript"
+    ],
+    "attempts": 1,
+    "acceptedReductions": 0,
+    "peerDependencies": {},
+    "allowInstallScripts": false,
+    "offline": true
+  },
+  "diagnostics": {
+    "method": "project-local-stack-order",
+    "status": "EVIDENCE AVAILABLE",
+    "meaning": "Project-local stack evidence, optionally mapped to retained original sources; not proof of root cause. No coverage or passing comparison collected.",
+    "locations": [
+      {
+        "file": "src/parser.ts",
+        "line": 2,
+        "column": 24,
+        "stackDepth": 0,
+        "evidence": [
+          "top-project-stack-frame",
+          "present-in-accepted-failure-stack",
+          "retained-file-low-weight",
+          "required-for-reproduction-not-proof-of-bug",
+          "source-map-original-location"
+        ],
+        "generated": {
+          "file": "dist/parser.js",
+          "line": 5,
+          "column": 25
+        }
+      },
+      {
+        "file": "src/repro.ts",
+        "line": 2,
+        "column": 14,
+        "stackDepth": 1,
+        "evidence": [
+          "deeper-project-stack-frame",
+          "present-in-accepted-failure-stack",
+          "retained-file-low-weight",
+          "required-for-reproduction-not-proof-of-bug",
+          "source-map-original-location"
+        ],
+        "generated": {
+          "file": "dist/repro.js",
+          "line": 4,
+          "column": 27
+        }
+      }
+    ],
+    "sourceMaps": {
+      "supported": "bounded local v3 sidecar/base64 maps; retained project sources only",
+      "mappedLocations": 2
+    }
+  },
+  "verify": {
+    "success": true,
+    "integrity": "pass",
+    "install": "pass",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "sourceUnchanged": true,
+  "elapsedMs": 10675
+}

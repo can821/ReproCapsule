@@ -26,7 +26,7 @@ export function localiseStack(result, cwd, retainedFiles, explanations) {
     locations: ranked.map((location, index) => ({ ...location,
       evidence: [index === 0 ? 'top-project-stack-frame' : 'deeper-project-stack-frame',
         'present-in-accepted-failure-stack', 'retained-file-low-weight',
-        ...(explanations?.files[location.file]?.classification === 'REQUIRED' ? ['required-for-reproduction-not-proof-of-bug'] : [])],
+        ...(explanations?.files?.[location.file]?.classification === 'REQUIRED' ? ['required-for-reproduction-not-proof-of-bug'] : [])],
     })),
   };
 }
