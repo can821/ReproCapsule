@@ -2,6 +2,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildCapsule } from './capsule.js';
 import { verifyCapsule } from './verify.js';
+import { reportCapsule } from './report.js';
 import { verifyFix } from './verify-fix.js';
 import { bisectRegression } from './bisect.js';
 import { resumeOptions } from './checkpoint.js';
@@ -12,6 +13,7 @@ const help = `ReproCapsule — reduce and independently verify failing npm proje
   reprocapsule reduce --repo PATH --command 'node test/repro.js' --out PATH
   reprocapsule bisect --repo PATH --good REF --bad REF --command COMMAND
   reprocapsule verify-fix CAPSULE --patch FILE [--test-command COMMAND]
+  reprocapsule report CAPSULE --out FILE [--format html|markdown] [--plugin PATH]
   reprocapsule verify CAPSULE
   reprocapsule resume CHECKPOINT --out NEW_PATH
 
@@ -47,7 +49,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -70,6 +72,12 @@ export async function main(args = process.argv.slice(2)) {
       maxRuns: positive('max-runs', 32), maxTimeMs: positive('max-time', 120) * 1000 });
     console.log(values.json ? JSON.stringify(result) : result.status === 'FOUND' ? `First tested bad commit identified by bisect: ${result.firstTestedBadCommit}` : `Bisect: ${result.status}`);
     if (!result.success) process.exitCode = result.status === 'BUDGET EXHAUSTED' ? 7 : 5;
+    return result;
+  }
+  if (positionals[0] === 'report' && positionals.length === 2) {
+    if (!values.out) throw new ReproError('INVALID_ARGUMENTS','report requires --out FILE outside the capsule.');
+    const result = await reportCapsule({ capsule: path.resolve(positionals[1]), output: path.resolve(values.out), format: values.format ?? 'html', plugin: values.plugin });
+    console.log(values.json ? JSON.stringify(result) : `Report created: ${result.output} (integrity checked; command not executed)`);
     return result;
   }
   if (positionals[0] === 'verify-fix' && positionals.length === 2) {
