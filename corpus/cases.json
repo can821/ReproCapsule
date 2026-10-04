@@ -1,0 +1,67 @@
+[
+  {
+    "name": "ms",
+    "version": "2.1.3",
+    "commit": "1c6264b795492e8fdecbc82cb8802fcfbfc08d26",
+    "license": "MIT",
+    "repository": "git+https://github.com/vercel/ms.git",
+    "tarball": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+    "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
+    "probe": "require('.')('');",
+    "failure": "Rejected empty duration",
+    "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+    "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository."
+  },
+  {
+    "name": "semver",
+    "version": "7.6.3",
+    "commit": "0a12d6c7debb1dc82d8645c770e77c47bac5e1ea",
+    "license": "ISC",
+    "repository": "git+https://github.com/npm/node-semver.git",
+    "tarball": "https://registry.npmjs.org/semver/-/semver-7.6.3.tgz",
+    "integrity": "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==",
+    "probe": "new (require('.').SemVer)('not-a-version');",
+    "failure": "Invalid semantic version",
+    "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+    "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository."
+  },
+  {
+    "name": "fast-json-stable-stringify",
+    "version": "2.1.0",
+    "commit": "b3ab8bdfb91cb182c93475c2c3518d6224672bb4",
+    "license": "MIT",
+    "repository": "git://github.com/epoberezkin/fast-json-stable-stringify.git",
+    "tarball": "https://registry.npmjs.org/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz",
+    "integrity": "sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==",
+    "probe": "const x={};x.self=x;require('.')(x);",
+    "failure": "Cyclic structure rejection",
+    "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+    "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository."
+  },
+  {
+    "name": "minimist",
+    "version": "1.2.8",
+    "commit": "6901ee286bc4c16da6830b48b46ce1574703cea1",
+    "license": "MIT",
+    "repository": "git://github.com/minimistjs/minimist.git",
+    "tarball": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz",
+    "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==",
+    "probe": "require('.')(undefined);",
+    "failure": "Missing argument array",
+    "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+    "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository."
+  },
+  {
+    "name": "json5",
+    "version": "2.2.3",
+    "commit": "c3a75242772a5026a49c4017a16d9b3543b62776",
+    "license": "MIT",
+    "repository": "git+https://github.com/json5/json5.git",
+    "tarball": "https://registry.npmjs.org/json5/-/json5-2.2.3.tgz",
+    "integrity": "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==",
+    "probe": "require('.').parse('{broken');",
+    "failure": "Invalid JSON5 syntax",
+    "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+    "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository."
+  }
+]

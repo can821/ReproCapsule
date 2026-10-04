@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 1,
+  "scope": "Independent production distributions with authored negative-input probes; not historical upstream bugs or full upstream test suites.",
+  "results": [
+    {
+      "name": "ms",
+      "version": "2.1.3",
+      "commit": "1c6264b795492e8fdecbc82cb8802fcfbfc08d26",
+      "license": "MIT",
+      "repository": "git+https://github.com/vercel/ms.git",
+      "tarball": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+      "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
+      "probe": "require('.')('');",
+      "failure": "Rejected empty duration",
+      "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+      "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository.",
+      "runtime": "v24.19.0",
+      "packageManager": "npm production snapshot; no production dependencies",
+      "testRunner": "node probe.cjs",
+      "reduction": {
+        "originalFileCount": 6,
+        "finalFileCount": 5,
+        "originalCandidateCount": 3,
+        "finalCandidateCount": 2,
+        "reductionPercentage": 16.67,
+        "candidateAttempts": 4,
+        "acceptedReductions": 1,
+        "reproductionAttempts": 10,
+        "cacheHits": 0,
+        "cacheMisses": 4,
+        "persistentCacheHits": 0,
+        "installCount": 0,
+        "baselineRuns": 2,
+        "durationBeforePackageVerificationMs": 221,
+        "terminationReason": "complete",
+        "complete": true,
+        "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+      },
+      "dependencies": {
+        "original": 0,
+        "final": 0
+      },
+      "input": "not requested",
+      "sourceReduction": "not implemented",
+      "verification": {
+        "success": true,
+        "integrity": "pass",
+        "install": "not-required",
+        "failure": "pass",
+        "verified": true,
+        "exitCode": 1
+      },
+      "originalUnchanged": true,
+      "localisation": {
+        "method": "project-local-stack-order",
+        "status": "EVIDENCE AVAILABLE",
+        "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+        "locations": [
+          {
+            "file": "index.js",
+            "line": 34,
+            "column": 9,
+            "stackDepth": 0,
+            "evidence": [
+              "top-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "probe.cjs",
+            "line": 1,
+            "column": 13,
+            "stackDepth": 1,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          }
+        ]
+      },
+      "minimality": {
+        "requested": true,
+        "status": "PASS",
+        "level": "1-minimal",
+        "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+        "candidateCount": 2,
+        "auditedCandidates": 2,
+        "individuallyRequired": 2,
+        "excludedFiles": [
+          "license.md",
+          "package-lock.json",
+          "package.json"
+        ],
+        "terminationReason": null,
+        "reproductionRuns": 2
+      },
+      "elapsedMs": 277,
+      "success": true
+    },
+    {
+      "name": "semver",
+      "version": "7.6.3",
+      "commit": "0a12d6c7debb1dc82d8645c770e77c47bac5e1ea",
+      "license": "ISC",
+      "repository": "git+https://github.com/npm/node-semver.git",
+      "tarball": "https://registry.npmjs.org/semver/-/semver-7.6.3.tgz",
+      "integrity": "sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==",
+      "probe": "new (require('.').SemVer)('not-a-version');",
+      "failure": "Invalid semantic version",
+      "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+      "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository.",
+      "runtime": "v24.19.0",
+      "packageManager": "npm production snapshot; no production dependencies",
+      "testRunner": "node probe.cjs",
+      "reduction": {
+        "originalFileCount": 54,
+        "finalFileCount": 49,
+        "originalCandidateCount": 51,
+        "finalCandidateCount": 46,
+        "reductionPercentage": 9.26,
+        "candidateAttempts": 172,
+        "acceptedReductions": 4,
+        "reproductionAttempts": 220,
+        "cacheHits": 2,
+        "cacheMisses": 170,
+        "persistentCacheHits": 0,
+        "installCount": 0,
+        "baselineRuns": 2,
+        "durationBeforePackageVerificationMs": 7166,
+        "terminationReason": "complete",
+        "complete": true,
+        "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+      },
+      "dependencies": {
+        "original": 0,
+        "final": 0
+      },
+      "input": "not requested",
+      "sourceReduction": "not implemented",
+      "verification": {
+        "success": true,
+        "integrity": "pass",
+        "install": "not-required",
+        "failure": "pass",
+        "verified": true,
+        "exitCode": 1
+      },
+      "originalUnchanged": true,
+      "localisation": {
+        "method": "project-local-stack-order",
+        "status": "EVIDENCE AVAILABLE",
+        "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+        "locations": [
+          {
+            "file": "classes/semver.js",
+            "line": 38,
+            "column": 13,
+            "stackDepth": 0,
+            "evidence": [
+              "top-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "probe.cjs",
+            "line": 1,
+            "column": 1,
+            "stackDepth": 1,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          }
+        ]
+      },
+      "minimality": {
+        "requested": true,
+        "status": "PASS",
+        "level": "1-minimal",
+        "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+        "candidateCount": 46,
+        "auditedCandidates": 46,
+        "individuallyRequired": 46,
+        "excludedFiles": [
+          "LICENSE",
+          "package-lock.json",
+          "package.json"
+        ],
+        "terminationReason": null,
+        "reproductionRuns": 46
+      },
+      "elapsedMs": 7291,
+      "success": true
+    },
+    {
+      "name": "fast-json-stable-stringify",
+      "version": "2.1.0",
+      "commit": "b3ab8bdfb91cb182c93475c2c3518d6224672bb4",
+      "license": "MIT",
+      "repository": "git://github.com/epoberezkin/fast-json-stable-stringify.git",
+      "tarball": "https://registry.npmjs.org/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz",
+      "integrity": "sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==",
+      "probe": "const x={};x.self=x;require('.')(x);",
+      "failure": "Cyclic structure rejection",
+      "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+      "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository.",
+      "runtime": "v24.19.0",
+      "packageManager": "npm production snapshot; no production dependencies",
+      "testRunner": "node probe.cjs",
+      "reduction": {
+        "originalFileCount": 20,
+        "finalFileCount": 5,
+        "originalCandidateCount": 17,
+        "finalCandidateCount": 2,
+        "reductionPercentage": 75,
+        "candidateAttempts": 6,
+        "acceptedReductions": 3,
+        "reproductionAttempts": 12,
+        "cacheHits": 0,
+        "cacheMisses": 6,
+        "persistentCacheHits": 0,
+        "installCount": 0,
+        "baselineRuns": 2,
+        "durationBeforePackageVerificationMs": 268,
+        "terminationReason": "complete",
+        "complete": true,
+        "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+      },
+      "dependencies": {
+        "original": 0,
+        "final": 0
+      },
+      "input": "not requested",
+      "sourceReduction": "not implemented",
+      "verification": {
+        "success": true,
+        "integrity": "pass",
+        "install": "not-required",
+        "failure": "pass",
+        "verified": true,
+        "exitCode": 1
+      },
+      "originalUnchanged": true,
+      "localisation": {
+        "method": "project-local-stack-order",
+        "status": "EVIDENCE AVAILABLE",
+        "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+        "locations": [
+          {
+            "file": "index.js",
+            "line": 42,
+            "column": 19,
+            "stackDepth": 0,
+            "evidence": [
+              "top-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "index.js",
+            "line": 50,
+            "column": 25,
+            "stackDepth": 1,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "index.js",
+            "line": 58,
+            "column": 7,
+            "stackDepth": 2,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "probe.cjs",
+            "line": 1,
+            "column": 33,
+            "stackDepth": 3,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          }
+        ]
+      },
+      "minimality": {
+        "requested": true,
+        "status": "PASS",
+        "level": "1-minimal",
+        "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+        "candidateCount": 2,
+        "auditedCandidates": 2,
+        "individuallyRequired": 2,
+        "excludedFiles": [
+          "LICENSE",
+          "package-lock.json",
+          "package.json"
+        ],
+        "terminationReason": null,
+        "reproductionRuns": 2
+      },
+      "elapsedMs": 325,
+      "success": true
+    },
+    {
+      "name": "minimist",
+      "version": "1.2.8",
+      "commit": "6901ee286bc4c16da6830b48b46ce1574703cea1",
+      "license": "MIT",
+      "repository": "git://github.com/minimistjs/minimist.git",
+      "tarball": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz",
+      "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==",
+      "probe": "require('.')(undefined);",
+      "failure": "Missing argument array",
+      "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+      "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository.",
+      "runtime": "v24.19.0",
+      "packageManager": "npm production snapshot; no production dependencies",
+      "testRunner": "node probe.cjs",
+      "reduction": {
+        "originalFileCount": 26,
+        "finalFileCount": 5,
+        "originalCandidateCount": 23,
+        "finalCandidateCount": 2,
+        "reductionPercentage": 80.77,
+        "candidateAttempts": 9,
+        "acceptedReductions": 4,
+        "reproductionAttempts": 15,
+        "cacheHits": 0,
+        "cacheMisses": 9,
+        "persistentCacheHits": 0,
+        "installCount": 0,
+        "baselineRuns": 2,
+        "durationBeforePackageVerificationMs": 340,
+        "terminationReason": "complete",
+        "complete": true,
+        "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+      },
+      "dependencies": {
+        "original": 0,
+        "final": 0
+      },
+      "input": "not requested",
+      "sourceReduction": "not implemented",
+      "verification": {
+        "success": true,
+        "integrity": "pass",
+        "install": "not-required",
+        "failure": "pass",
+        "verified": true,
+        "exitCode": 1
+      },
+      "originalUnchanged": true,
+      "localisation": {
+        "method": "project-local-stack-order",
+        "status": "EVIDENCE AVAILABLE",
+        "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+        "locations": [
+          {
+            "file": "index.js",
+            "line": 138,
+            "column": 11,
+            "stackDepth": 0,
+            "evidence": [
+              "top-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "probe.cjs",
+            "line": 1,
+            "column": 13,
+            "stackDepth": 1,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          }
+        ]
+      },
+      "minimality": {
+        "requested": true,
+        "status": "PASS",
+        "level": "1-minimal",
+        "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+        "candidateCount": 2,
+        "auditedCandidates": 2,
+        "individuallyRequired": 2,
+        "excludedFiles": [
+          "LICENSE",
+          "package-lock.json",
+          "package.json"
+        ],
+        "terminationReason": null,
+        "reproductionRuns": 2
+      },
+      "elapsedMs": 399,
+      "success": true
+    },
+    {
+      "name": "json5",
+      "version": "2.2.3",
+      "commit": "c3a75242772a5026a49c4017a16d9b3543b62776",
+      "license": "MIT",
+      "repository": "git+https://github.com/json5/json5.git",
+      "tarball": "https://registry.npmjs.org/json5/-/json5-2.2.3.tgz",
+      "integrity": "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==",
+      "probe": "require('.').parse('{broken');",
+      "failure": "Invalid JSON5 syntax",
+      "provenance": "Independently published production source; authored negative-input compatibility probe, NOT an upstream bug claim.",
+      "adaptation": "Development dependencies/scripts omitted; empty production lock added. Source code unchanged. Not the full upstream development repository.",
+      "runtime": "v24.19.0",
+      "packageManager": "npm production snapshot; no production dependencies",
+      "testRunner": "node probe.cjs",
+      "reduction": {
+        "originalFileCount": 22,
+        "finalFileCount": 9,
+        "originalCandidateCount": 19,
+        "finalCandidateCount": 6,
+        "reductionPercentage": 59.09,
+        "candidateAttempts": 35,
+        "acceptedReductions": 7,
+        "reproductionAttempts": 44,
+        "cacheHits": 1,
+        "cacheMisses": 34,
+        "persistentCacheHits": 0,
+        "installCount": 0,
+        "baselineRuns": 2,
+        "durationBeforePackageVerificationMs": 1069,
+        "terminationReason": "complete",
+        "complete": true,
+        "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+      },
+      "dependencies": {
+        "original": 0,
+        "final": 0
+      },
+      "input": "not requested",
+      "sourceReduction": "not implemented",
+      "verification": {
+        "success": true,
+        "integrity": "pass",
+        "install": "not-required",
+        "failure": "pass",
+        "verified": true,
+        "exitCode": 1
+      },
+      "originalUnchanged": true,
+      "localisation": {
+        "method": "project-local-stack-order",
+        "status": "EVIDENCE AVAILABLE",
+        "meaning": "Suspicious locations from the accepted failing execution; not proof of root cause. No coverage or passing comparison was collected.",
+        "locations": [
+          {
+            "file": "lib/parse.js",
+            "line": 1110,
+            "column": 17,
+            "stackDepth": 0,
+            "evidence": [
+              "top-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "lib/parse.js",
+            "line": 1059,
+            "column": 12,
+            "stackDepth": 1,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "lib/parse.js",
+            "line": 881,
+            "column": 19,
+            "stackDepth": 2,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "lib/parse.js",
+            "line": 32,
+            "column": 32,
+            "stackDepth": 3,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          },
+          {
+            "file": "probe.cjs",
+            "line": 1,
+            "column": 14,
+            "stackDepth": 4,
+            "evidence": [
+              "deeper-project-stack-frame",
+              "present-in-accepted-failure-stack",
+              "retained-file-low-weight",
+              "required-for-reproduction-not-proof-of-bug"
+            ]
+          }
+        ]
+      },
+      "minimality": {
+        "requested": true,
+        "status": "PASS",
+        "level": "1-minimal",
+        "scope": "with respect to the tested candidate set; protected/control items excluded; no global minimum claim",
+        "candidateCount": 6,
+        "auditedCandidates": 6,
+        "individuallyRequired": 6,
+        "excludedFiles": [
+          "LICENSE.md",
+          "package-lock.json",
+          "package.json"
+        ],
+        "terminationReason": null,
+        "reproductionRuns": 6
+      },
+      "elapsedMs": 1136,
+      "success": true
+    }
+  ]
+}
