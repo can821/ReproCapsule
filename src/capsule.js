@@ -11,6 +11,7 @@ import { detectPackageManager, discoverNpm, npmInstall, selectDependencies, loca
 import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
+import { workspaceSelection, inWorkspace } from './workspaces.js';
 import { ReductionBudget } from './budget.js';
 import { localiseWithSourceMaps } from './source-maps.js';
 import { loadJsonInput } from './json-input.js';
@@ -58,14 +59,17 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     if (resumeState && JSON.stringify(runtime) !== JSON.stringify(resumeState.runtime)) throw new ReproError('CHECKPOINT_INCOMPATIBLE', 'Runtime changed; start a new reduction.');
     const input = await loadJsonInput(workspace.snapshot, workspace.files, reduceInput, resumeState?.state.input);
     let inputMetrics = input ? { ...input.metrics, attempts: 0, acceptedReductions: 0, complete: resumeState?.state.phase === 'done', terminationReason: 'not-run-this-session' } : null;
-    const protectedFiles = workspace.files.filter((file) => isControlFile(file) || file === input?.file || keep.some((entry) => under(file, entry)));
+    let protectedFiles = workspace.files.filter((file) => isControlFile(file) || file === input?.file || keep.some((entry) => under(file, entry)));
     const candidates = workspace.files.filter((file) => !protectedFiles.includes(file));
     const originalDependencies = manager.ids;
     let retainedDependencies = [...originalDependencies], retained = [...workspace.files];
-    let phase = resumeState?.state.phase ?? 'files';
+    const workspaces = manager.workspaces ?? [];
+    let workspaceMetrics = { originalCount: workspaces.length, finalCount: workspaces.length, attempts: 0, acceptedReductions: 0, scope: 'flat npm workspace membership; workspace dependency declarations preserved', minimality: 'NOT AUDITED' };
+    let phase = resumeState?.state.phase ?? (workspaces.length ? 'workspaces' : 'files');
     if (resumeState) {
       retained = resumeState.state.files;
       retainedDependencies = resumeState.state.dependencies;
+      protectedFiles = protectedFiles.filter(file => !workspaces.some(w => inWorkspace(file,w.path) && !retained.includes(`${w.path}/package.json`)) || keep.some(entry => under(file,entry)) || file === input?.file);
       if (new Set(retained).size !== retained.length || new Set(retainedDependencies).size !== retainedDependencies.length ||
           retained.some((file) => !workspace.files.includes(file)) || retainedDependencies.some((id) => !originalDependencies.includes(id)) ||
           protectedFiles.some((file) => !retained.includes(file))) throw new ReproError('INVALID_CHECKPOINT', 'Checkpoint items are inconsistent with the source/protection policy.');
@@ -73,17 +77,17 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     const packageStates = new Map(), cache = new Map();
     let cacheHits = 0, cacheMisses = 0, persistentCacheHits = 0, installCount = 0, attempts = 0, accepted = 0;
     let dependencyAttempts = 0, dependencyAccepted = 0, terminationReason = 'complete';
-    const packageKey = (ids) => JSON.stringify([...ids].sort());
-    if (npm) packageStates.set(packageKey(originalDependencies), {
+    const packageKey = (ids, files = retained) => JSON.stringify([[...ids].sort(),workspaces.filter(w => files.includes(`${w.path}/package.json`)).map(w => w.path)]);
+    if (npm) packageStates.set(packageKey(originalDependencies,workspace.files), {
       pkg: await readFile(path.join(workspace.snapshot, 'package.json'), 'utf8'),
       lock: await readFile(path.join(workspace.snapshot, 'package-lock.json'), 'utf8'),
     });
-    async function applyPackage(cwd, ids) {
-      const state = packageStates.get(packageKey(ids));
+    async function applyPackage(cwd, ids, files = retained) {
+      const state = packageStates.get(packageKey(ids,files));
       if (state) {
         await writeFile(path.join(cwd, 'package.json'), state.pkg);
         await writeFile(path.join(cwd, 'package-lock.json'), state.lock);
-      } else await writePackageSelection(cwd, manager.pkg, ids);
+      } else await writeFile(path.join(cwd, 'package.json'), JSON.stringify(workspaceSelection(selectDependencies(manager.pkg,ids),workspaces,files),null,2)+'\n');
       return Boolean(state);
     }
     async function observe(files, ids, reduction = false, inputText = input?.content) {
@@ -91,7 +95,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       const cwd = await workspace.materialize(files);
       if (input && files.includes(input.file)) await writeFile(path.join(cwd, input.file), inputText);
       if (npm) {
-        const knownLock = await applyPackage(cwd, ids);
+        const knownLock = await applyPackage(cwd, ids, files);
         try {
           installCount++;
           await npmInstall({ cwd, npm, updateLock: !knownLock, timeoutMs: reduction ? budget.remaining(installTimeoutMs) : installTimeoutMs, allowInstallScripts, offline });
@@ -99,7 +103,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
           if (reduction && budget.reason() === 'max-time') throw budget.exhausted('max-time');
           throw error;
         }
-        if (!knownLock) packageStates.set(packageKey(ids), {
+        if (!knownLock) packageStates.set(packageKey(ids,files), {
           pkg: await readFile(path.join(cwd, 'package.json'), 'utf8'),
           lock: await readFile(path.join(cwd, 'package-lock.json'), 'utf8'),
         });
@@ -171,6 +175,21 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       attempts += reduction.attempts; accepted += reduction.accepted;
       if (!reduction.complete) terminationReason = reduction.terminationReason;
     }
+    if (phase === 'workspaces') {
+      const active = workspaces.filter(w => retained.includes(`${w.path}/package.json`));
+      const fixed = active.filter(w => keep.some(entry => under(w.path,entry) || under(entry,w.path)) || input && under(input.file,w.path)).map(w => w.path);
+      const selectedFiles = paths => retained.filter(file => !active.some(w => under(file,w.path) && !paths.includes(w.path)));
+      const reduction = await reduceFiles(active.map(w => w.path).filter(dir => !fixed.includes(dir)), async paths => preserves(selectedFiles([...fixed,...paths]),retainedDependencies), {
+        shouldStop: () => budget.reason(),
+        onAccepted: async paths => { retained = selectedFiles([...fixed,...paths]); await persist(); },
+      });
+      workspaceMetrics.attempts = reduction.attempts; workspaceMetrics.acceptedReductions = reduction.accepted;
+      attempts += reduction.attempts; accepted += reduction.accepted;
+      protectedFiles = protectedFiles.filter(file => retained.includes(file));
+      if (!reduction.complete) terminationReason = reduction.terminationReason;
+      else phase = 'files';
+      await persist(terminationReason === 'complete' ? 'running' : 'partial');
+    }
     if (phase === 'files') {
       await reduceProjectFiles();
       if (terminationReason === 'complete') phase = npm ? 'dependencies' : input ? 'input' : 'done';
@@ -218,11 +237,13 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       throw new ReproError('FINAL_VERIFICATION_FAILED', 'The reduced file set did not reproduce reliably.');
     }
     const signature = first.signature;
+    workspaceMetrics.finalCount = workspaces.filter(w => retained.includes(`${w.path}/package.json`)).length;
+    workspaceMetrics.retained = workspaces.filter(w => retained.includes(`${w.path}/package.json`)).map(w => ({path:w.path,name:w.name}));
     const manifest = {
       schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
       failurePredicate: predicate,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
-      sourceSnapshotId, diagnostics: await localiseWithSourceMaps(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, explanations, minimality: auditResult.metadata,
+      sourceSnapshotId, workspaces: workspaceMetrics, diagnostics: await localiseWithSourceMaps(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, explanations, minimality: auditResult.metadata,
       continuation: { resumed: Boolean(resumeState), priorReproductionAttempts: resumeState?.counters.reproductionAttempts ?? 0 },
       environment: { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, osRelease: os.release(), arch: process.arch },
       reduction: {

@@ -109,9 +109,10 @@ export async function main(args = process.argv.slice(2)) {
   const summary = { success: true, capsule: result.output, verified: result.verification.verified, complete: counts.complete,
     files: { before: counts.originalFileCount, after: counts.finalFileCount }, dependencies: { before: deps.originalCount, after: deps.finalCount },
     runs: counts.reproductionAttempts, cacheHits: counts.cacheHits, cacheMisses: counts.cacheMisses, persistentCacheHits: counts.persistentCacheHits, elapsedMs: result.elapsedMs,
-    diagnostics: result.manifest.diagnostics, inputReduction: result.manifest.inputReduction, minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
+    workspaces: result.manifest.workspaces, diagnostics: result.manifest.diagnostics, inputReduction: result.manifest.inputReduction, minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
   if (values.json) console.log(JSON.stringify(summary));
   else console.log(`Failure preserved\nProject files: ${counts.originalFileCount} -> ${counts.finalFileCount} (${counts.reductionPercentage}% reduction)\nDependencies: ${deps.originalCount} -> ${deps.finalCount}\nRuns: ${counts.reproductionAttempts}; cache hits: ${counts.cacheHits}; elapsed: ${result.elapsedMs} ms\n${counts.complete ? 'CAPSULE VERIFIED' : 'PARTIAL CAPSULE VERIFIED: ' + counts.terminationReason}\nCapsule created at ${result.output}`);
+  if (!values.json && result.manifest.workspaces.originalCount) console.log(`Workspaces: ${result.manifest.workspaces.originalCount} -> ${result.manifest.workspaces.finalCount}`);
   if (!values.json) {
     for (const location of result.manifest.diagnostics.locations.slice(0, 3)) console.log(`Stack evidence: ${location.file}:${location.line}:${location.column}`);
   }

@@ -2,6 +2,7 @@ import { readFile, writeFile, rm, mkdtemp, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { runCommand } from './runner.js';
+import { discoverWorkspaces } from './workspaces.js';
 import { ReproError } from './errors.js';
 
 export const dependencySections = ['dependencies', 'devDependencies', 'optionalDependencies'];
@@ -41,19 +42,29 @@ export async function detectPackageManager(root, files) {
   if (!files.includes('package.json')) return { kind: 'none', needsInstall: false, ids: [], localPaths: [] };
   const pkg = await jsonFile(root, 'package.json');
   if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) throw new ReproError('INVALID_PACKAGE', 'package.json must contain an object.');
-  if (pkg.workspaces || (pkg.packageManager && !/^npm@\d/.test(pkg.packageManager)) ||
+  if ((pkg.packageManager && !/^npm@\d/.test(pkg.packageManager)) ||
       files.includes('yarn.lock') || files.includes('pnpm-lock.yaml') || files.includes('npm-shrinkwrap.json')) {
-    throw new ReproError('UNSUPPORTED_PACKAGE_MANAGER', 'Only single-project npm with package-lock.json is supported.');
+    throw new ReproError('UNSUPPORTED_PACKAGE_MANAGER', 'Only npm with package-lock.json is supported.');
   }
   for (const section of [...dependencySections, 'peerDependencies']) {
     if (pkg[section] && (typeof pkg[section] !== 'object' || Array.isArray(pkg[section]))) throw new ReproError('INVALID_PACKAGE', 'Dependency sections must be objects.');
   }
+  const workspaces = await discoverWorkspaces(root, pkg, files);
   const ids = dependencyIds(pkg), localPaths = localReferences(pkg);
-  const needsInstall = ids.length > 0 || Object.keys(pkg.peerDependencies ?? {}).length > 0;
+  const needsInstall = workspaces.length > 0 || ids.length > 0 || Object.keys(pkg.peerDependencies ?? {}).length > 0;
   const lock = await jsonFile(root, 'package-lock.json', !needsInstall);
   if (lock) {
     if (![2, 3].includes(lock.lockfileVersion) || !lock.packages?.['']) throw new ReproError('INVALID_LOCKFILE', 'npm lockfile version 2 or 3 with root metadata is required.');
     const lockedRoot = lock.packages[''];
+    if (JSON.stringify(pkg.workspaces ?? []) !== JSON.stringify(lockedRoot.workspaces ?? [])) throw new ReproError('INVALID_LOCKFILE', 'Workspace declarations disagree with package-lock.json.');
+    for (const ws of workspaces) {
+      const locked = lock.packages[ws.path];
+      if (!locked || locked.version !== ws.manifest.version) throw new ReproError('INVALID_LOCKFILE', 'Workspace lock entry is missing or inconsistent.');
+      for (const section of [...dependencySections, 'peerDependencies']) {
+        const entries = value => JSON.stringify(Object.entries(value ?? {}).sort());
+        if (entries(locked[section]) !== entries(ws.manifest[section])) throw new ReproError('INVALID_LOCKFILE', 'Workspace dependency declarations disagree with lock.');
+      }
+    }
     for (const section of [...dependencySections, 'peerDependencies']) {
       const normalized = (value) => JSON.stringify(Object.entries(value ?? {}).sort(([a], [b]) => a.localeCompare(b)));
       if (normalized(pkg[section]) !== normalized(lockedRoot[section])) throw new ReproError('INVALID_LOCKFILE', 'Root dependency declarations disagree with package-lock.json.');
@@ -65,7 +76,7 @@ export async function detectPackageManager(root, files) {
       }
     }
   }
-  return { kind: 'npm', pkg, lock, ids, localPaths, needsInstall, packageManager: pkg.packageManager ?? null };
+  return { kind: 'npm', pkg, lock, ids, localPaths, workspaces, needsInstall, packageManager: pkg.packageManager ?? null };
 }
 
 export async function discoverNpm({ npmPath = process.env.REPROCAPSULE_NPM, cwd, timeoutMs = 5000 } = {}) {
