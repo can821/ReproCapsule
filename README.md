@@ -1,142 +1,85 @@
 # ReproCapsule
 
-Reduce a failing Node.js/npm repository into a smaller, independently verifiable reproduction capsule. Node.js 24+, macOS/Linux; npm 9+ when packages are needed. No external runtime library dependencies. Tested on macOS with Node 24.19.0 and npm 10.9.2.
+ReproCapsule reduces failing Node.js/npm projects into smaller, independently verifiable reproduction capsules while preserving the target failure.
+
+**Status: advanced alpha (0.4.0).** Primary remaining validation: complete independent applications and historical bugs, beyond the measured production-package compatibility probes. Not production-ready or a universal root-cause detector.
+
+## Quick start
+
+Node 24+, npm 9+, macOS/Linux implementation. Only macOS was exercised locally; the Ubuntu/macOS Node 24 workflow is prepared, not yet remotely verified.
 
 ```sh
-node bin/reprocapsule.js reduce --repo ./broken-app --command 'npm test' --out ./capsule
+npm ci --ignore-scripts
+node bin/reprocapsule.js reduce --repo ./broken-project --command 'npm test' --out ./capsule
 node bin/reprocapsule.js verify ./capsule
-node --test test/*.test.js
+npm test
 ```
 
-Output must be a new directory outside the source repository. npm must exist on PATH, or be supplied with `--npm-path /path/to/npm-cli.js` / `REPROCAPSULE_NPM`. The tool never downloads npm itself. Tests require npm; local package fixtures run offline.
+Output must be new and outside the source. npm may be supplied with `--npm-path /path/to/npm-cli.js` or `REPROCAPSULE_NPM`. This tool never installs system software. Package remains private; npm publication has not occurred. No LICENSE has been selected (`UNLICENSED`).
 
-## Reduction and fresh verification
+## Working capabilities
 
-1. Snapshot allowed source files without `.git`, `node_modules`, known secret files or symlinks.
-2. Detect the npm project, validate root lock declarations, and use fresh `npm ci --ignore-scripts` installations in temporary copies. Lockfiles 2/3 are supported; yarn, pnpm, shrinkwrap and workspaces are rejected.
-3. Confirm the same failure in at least two independent clean runs.
-4. Remove file groups with a ddmin-inspired strategy. Protect manifests, locks, requested paths and currently needed local package assets.
-5. Reduce top-level declarations across `dependencies`, `devDependencies`, `optionalDependencies`. Preserve peers. npm updates the lock with `install --package-lock-only --ignore-scripts`; a fresh `npm ci` must then succeed. No handwritten transitive resolver.
-6. Revisit files made unnecessary by dependency removal. Verify the reduced input again.
-7. Generate the capsule with SHA-256 file hashes and metadata; copy that finished capsule into another temporary directory, install from scratch, and reproduce the failure. Only then report `CAPSULE VERIFIED`.
-
-The default predicate remains full normalized stdout/stderr plus nonzero exit code, hashed with SHA-256. ANSI colors, workspace paths/file URLs and narrowly recognized timing fields are normalized. Error messages and stack locations remain significant. Success, timeouts, signals and truncated output never match. Missing-module/setup errors cannot establish a baseline.
-
-`--match-stderr 'target message' [--exit-code 1]` deliberately chooses a broader user-defined predicate. Variable diagnostics may then be accepted if that predicate stays true. `--baseline-runs 3` strengthens the repetition check; disagreement stops reduction.
-
-The reducer seeks small phase-local sets. Only a passing `--audit-minimality` certifies 1-minimality with respect to the audited file/dependency candidate set. Protected/control files and JSON transformations are outside that certificate; no global minimum is claimed.
-
-## Controls
-
-| Option | Meaning |
-| --- | --- |
-| `--command-timeout N` / `--timeout-ms N` | Per-command milliseconds; default 10000 |
-| `--install-timeout-ms N` | Milliseconds for one lock-update/install operation; default 60000 |
-| `--allow-install-scripts` | Explicit lifecycle-script opt-in; OFF by default, including verify |
-| `--offline` | npm offline mode; used by local fixture tests |
-| `--max-runs N` | Total reproduction runs, reserving baseline runs and two final verifications |
-| `--max-time N` | Reduction deadline in seconds; baseline and mandatory final verification may extend wall time |
-| `--keep config/runtime.json` | Protect exact relative file/directory; repeatable |
-| `--json` | Structured reduce/verify result, without progress text |
-
-Budget exhaustion exports the best state only after mandatory verification, marks it `PARTIAL`, and makes no minimality claim. A failed final verification produces no capsule. npm installs have separate timeouts and are not counted as reproduction runs. Repeated complete candidate outcomes are cached in memory; optional persistent caching is described below. Keys include files, dependencies, selected input content, command and predicate; transient failures/timeouts are not cached. Final checks always bypass the cache. Checkpoint/resume is available as described below.
-
-## Actual measured demos
+- Chunk-based file reduction and top-level npm dependency reduction; npm owns lockfile regeneration and fresh installs.
+- Repeated baseline verification, strict normalized failure signatures, or explicit `--match-stderr TEXT [--exit-code N]`.
+- Atomic checkpoint/resume, scoped persistent candidate cache, run/time/install budgets, JSON CLI output.
+- Retained-item explanations and optional fresh single-removal file/dependency audit.
+- Explicit JSON input minimisation and opt-in AST source reduction.
+- Flat npm workspace membership reduction, dependency-closure checks, clean final verification and resume.
+- Stack evidence, bounded local source maps, native Git bisect and isolated supplied-patch verification.
+- Integrity-checked offline HTML/Markdown reports and explicitly selected local reporter plugins.
 
 ```sh
-node bin/reprocapsule.js reduce --repo test/fixtures/broken-parser --command 'node test/repro.js' --out work/file-final --json
-node bin/reprocapsule.js reduce --repo test/fixtures/npm-dependencies --command 'npm test' --out work/npm-final --offline --json
-node bin/reprocapsule.js verify work/npm-final --offline --json
+node bin/reprocapsule.js reduce --repo ./project --command 'npm test' --out ./small --checkpoint ./progress.json --cache-dir ./cache --audit-minimality
+node bin/reprocapsule.js resume ./progress.json --out ./continued
+node bin/reprocapsule.js reduce --repo ./project --command 'node repro.cjs' --out ./json-case --reduce-input request.json
+node bin/reprocapsule.js reduce --repo ./project --command 'npm test' --out ./source-case --reduce-source src/parser.ts
+node bin/reprocapsule.js bisect --repo ./project --good GOOD_REF --bad BAD_REF --command 'npm test'
+node bin/reprocapsule.js verify-fix ./capsule --patch ./fix.patch --test-command 'npm test'
+node bin/reprocapsule.js report ./capsule --out ./report.html
+node bin/reprocapsule.js report ./capsule --out ./issue.md --format markdown
+node bin/reprocapsule.js report ./capsule --out ./summary.json --format json --plugin ./examples/plugins/summary.mjs
 ```
 
-Use a different output path if one already exists.
+### TypeScript and source reduction
 
-| Measure | File-only fixture | npm fixture |
-| --- | --- | --- |
-| Eligible project files | 26 → 6 | 14 → 6 |
-| Top-level dependency declarations | 0 → 0 | 5 → 2 |
-| Reproduction executions | 33 | 22 |
-| Cached candidate results reused | 3 | 0 |
-| Elapsed on test machine | 840 ms | 5864 ms |
-| Fresh install | Not required | PASS, offline |
-| Same failure / original unchanged | PASS / PASS | PASS / PASS |
+The project's command must build and run its reproduction (for example `tsc -p tsconfig.json && node dist/repro.js`). Tested with TypeScript 5.8.3. The tool does not replace a compiler or claim tsx/ts-node/Jest/Vitest compatibility.
 
-The old fixture still retains the same four removable files plus two protected package files, with the same signature; caching saves three of the original 36 executions. One dummy `.env.example` is excluded. The npm fixture uses five tiny, self-contained local tarballs: two required packages and unused production/development/optional packages. Three declarations and their unused tarballs are removed. npm owns lockfile regeneration. The original 42-test baseline is preserved; the professionalisation suite adds evidence, JSON, history and patch verification tests (see measured results below).
+`--reduce-source PATH` selects one JS/TS file. TypeScript's parser selects top-level statement spans; candidates must parse and preserve the accepted failure. Newlines remain to avoid gratuitous strict stack changes. No regex-based source rewriting, nested/expression reduction or global-minimum claim. Builds must be part of the reproduction command. `--source-max-runs` defaults to 100. Source content is not put in checkpoints; AST selection recipes are reconstructed against the unchanged snapshot. File/dependency phases are not rerun after source/input changes; no fixpoint guarantee.
 
-Six retained project files plus three generated metadata/instruction files make nine capsule files. `capsule.json` records the command, predicate, source snapshot hash, per-file hashes, runtime/npm information, retained dependency declarations, exclusions, metrics and termination reason. Raw output and environment values are not stored. The manifest duration is explicitly measured before final verification; CLI JSON `elapsedMs` includes final verification. File hashes cover retained files and generated instructions, but not the self-referential manifest.
+TypeScript is a development dependency and optional peer. If it is unavailable to the tool, supply `--source-parser /path/to/typescript/lib/typescript.js` (trusted local module); no automatic download occurs. Local v3 sidecar/base64 source maps are bounded to 2 MiB and mapped only to retained project sources. Remote, indexed and escaping maps are ignored. [Node SourceMap API](https://nodejs.org/download/release/v24.18.0/docs/api/module.html#sourcemapfindoriginlinenumber-columnnumber).
 
-## Verify and exit codes
+### npm workspaces
 
-`verify` validates the recorded inventory and content hashes, then copies the capsule and installs/runs only in that fresh copy. The supplied capsule is not mutated. Hashes detect accidental corruption, not malicious replacement of both files and metadata. Verify executes the recorded trusted command; review capsules before running it. Older 0.1 capsules lack required integrity metadata and must be regenerated.
+Supported scope: flat named/versioned packages selected by explicit relative directories or terminal `/*` patterns, root lockfile v2/v3, normal npm version-range references between packages. Required local dependency edges cannot be silently replaced from the registry. Whole unused workspaces are removed before file/dependency phases. Workspace dependency declarations themselves are preserved. Nested roots, complex globs, workspace-local file/link/workspace protocols, yarn and pnpm remain unsupported. Workspace minimality is NOT AUDITED.
 
-| Exit | Meaning |
-| --- | --- |
-| 0 | Completed and verified |
-| 1 | Invalid input or unclassified operation error (existing CLI convention) |
-| 3 | Baseline does not reproduce |
-| 4 | Non-deterministic baseline |
-| 5 | Invalid/corrupted capsule or verification failure |
-| 6 | Package-manager, lockfile or install failure |
-| 7 | Verified partial capsule; reduction budget exhausted |
+### Evidence and limits
 
-A reproduction command's failing exit code is separate from the reducer's successful exit code.
+REQUIRED means necessary for this tested reproduction, not that a file contains the bug. The optional audit certifies only single removals in its tested file/dependency set, excluding protected/control files; not workspace/input/source/global minimality. Default signature hashes normalized full stdout/stderr and nonzero exit status. Different messages/stack positions are significant. Timeouts, signals and truncated output do not match. Explicit stderr predicates deliberately broaden acceptance.
 
-## Safety and limitations
+`--max-runs`, `--max-time` (seconds), `--timeout-ms` and `--install-timeout-ms` bound work; mandatory final verification may extend the reduction deadline. Partial results are exported only after verification. Cache entries exclude raw output/environment values and bind to a whole-environment fingerprint, but cannot model changing external services. Baseline, audit and final checks stay fresh. 0.3 checkpoints are incompatible with the new 0.4 tool version; existing capsules remain verifiable.
 
-Commands and opted-in lifecycle scripts are **trusted local input, NOT sandboxed**. They retain user permissions and can access network, absolute paths and external state. ReproCapsule itself only installs/runs in copied workspaces and never modifies the source. npm installation uses an explicit copied-directory prefix, temporary cache, and empty temporary user/global npm config. Environment variables are inherited, not saved; private registry setups needing excluded config are not supported automatically.
+Reports inspect integrity without executing the recorded command and do not embed source. Reporter contract: default export `{apiVersion:1,name,formats,render(report,{format})}` returning text up to 8 MiB. The plain-data report model has schemaVersion 1. This is a reporter-only plugin foundation, not a general adapter framework.
 
-Secret exclusions are filename rules, not a complete content scanner. Never put credentials inline in the recorded command. Local `file:` dependencies must stay inside the repository; external paths and monorepo/workspace orchestration are unsupported. Empty directories and symlinks are not preserved. Keep source files stable while copying; this is not protection against hostile filesystem races.
+## Measured evidence
 
-Offline fixture installs are verified; a broad public-registry/native-addon matrix is not. Installs with disabled scripts may not support native/build-time dependencies; opt in explicitly when trusted. Runtime/OS metadata does not recreate an entire machine. npm's declared `packageManager` is detected, but its exact version is not automatically installed. Windows is unsupported; Linux is implemented but not exercised here. Detached processes can escape a process group; forced termination may leave temporary files. Baseline repetitions do not prove absence of all flakiness. Strict transcript matching can reject otherwise equivalent failures.
+**71 automated tests passed, 0 failed, 0 skipped** on macOS arm64 / Node 24.19.0 / npm 10.9.2. Single-run timings below are fixture measurements, not universal performance promises.
 
-## Checkpoint / resume
+| Case | Measured result |
+|---|---|
+| Earlier file fixture | 26 → 6 files |
+| Earlier npm fixture | 5 → 2 dependencies |
+| JSON fixture | 21,813 → 58 bytes |
+| Earlier synthetic 2,000-file case | 2,000 → 2 files; about 4.26 s |
+| Flat workspace fixture | 4 → 2 workspaces, fresh install and resume verified |
+| JS AST fixture | 18 → 2 top-level statements; unchanged strict failure |
+| TS compiled/source-reduced fixture | 339 → 265 source bytes; 4 → 3 statements; 20 executions, 12.489 s |
 
-```sh
-node bin/reprocapsule.js reduce --repo ./broken-app --command 'npm test' --out ./partial --checkpoint ./progress.json --max-runs 12
-node bin/reprocapsule.js resume ./progress.json --out ./continued --max-runs 100
-```
+The TS result rebuilt with real `tsc`, verified independently, and mapped `dist/parser.js:7:25` to `src/parser.ts:2:24`. Strict emitted-stack matching conservatively limited further reductions.
 
-Checkpoint paths must be new and outside source/output. Atomic JSON saves happen after baseline confirmation, each accepted removal, and phase boundaries. An interruption can lose unfinished work, but never requires old temporary directories or node_modules. Resume verifies the filtered source's file inventory/content/modes and exact tool/Node/npm/platform identity, then reconfirms the saved failure in clean copies. Changes refuse resume. Checkpoints are trusted local data containing the recorded command, not environment values or raw diagnostics. Script-enabled checkpoints require a fresh `--allow-install-scripts` opt-in.
+Five independent published production distributions were tested: ms 6→5 files, semver 54→49, fast-json-stable-stringify 20→5, minimist 26→5, JSON5 22→9. These use authored negative-input probes, **not claimed historical upstream bugs or full upstream development suites**. Development manifests were explicitly adapted; production code stayed unchanged. Upstream commit metadata, licenses, integrity hashes, results and limitations are in [corpus/README.md](corpus/README.md). Third-party source is not committed.
 
-Resume starts the unfinished phase from the best retained set; completed phases are skipped. Persistent cache reuse is permitted only when source, runtime, command, predicate and the full environment fingerprint match. Fresh baseline/final/audit runs bypass it. Each invocation gets fresh run/time budgets and records prior reproduction counts separately. Concurrent writers to the same checkpoint are unsupported. Source changes to deliberately excluded files (e.g. .env) are outside the snapshot. A valid checkpoint is progress evidence, not an independently verified capsule.
+## Security and remaining scope
 
-Measured checkpoint proof: a 12-run npm reduction stopped at 9 files / 3 dependencies with a verified partial capsule. Resume reached 6 files / 2 dependencies in 14 additional runs and passed an independent fresh-install verification. The source remained unchanged. Fresh baseline/final checks add overhead: checkpointing preserves accepted progress, not a promise of fewer total runs for small examples.
+**Not a sandbox.** Commands, selected parser/reporter modules and opted-in lifecycle scripts execute with user permissions, including access to network/external files. Installs occur in copies; lifecycle scripts default OFF. `.git`, `node_modules`, symlinks and known secret filenames are excluded. Filename filtering is not a secret-content scanner. Review command metadata before sharing. Hashes detect corruption, not malicious replacement of both content and metadata. No telemetry, automatic source upload or LLM integration.
 
-## Unreleased professionalisation features
-
-```sh
-node bin/reprocapsule.js reduce --repo ./broken-app --command 'node repro.cjs' --out ./small --reduce-input request.json --audit-minimality --cache-dir ./candidate-cache
-node bin/reprocapsule.js bisect --repo ./project --good GOOD_REF --bad BAD_REF --command 'npm test' --json
-node bin/reprocapsule.js verify-fix ./small --patch ./fix.patch --test-command 'npm test' --json
-node scripts/benchmark.js
-```
-
-- **Explanations:** every retained file/dependency is CONTROL, PROTECTED, REQUIRED or UNTESTED; an audit can also identify REMOVABLE survivors. REQUIRED means necessary for the tested reproduction, not the location of the bug.
-- **Audit:** fresh single deletions of eligible files/declarations. PASS, PARTIAL or NOT PROVEN; bounded by existing budgets and repeated after resume.
-- **Persistent cache:** opt-in checksummed records, separate source/runtime/environment namespaces, no raw diagnostics or environment values. Only conclusive outcomes are reusable. The cache is trusted local data, not authenticated; external state and registry changes are not fingerprinted. Final verification remains fresh.
-- **JSON input:** one explicit relative JSON path, property/array deletion including nested structures; original untouched. Byte/structure metrics and value-free checkpoint edit recipes. Maximum 16 MiB / depth 64; `--input-max-runs` defaults to 200. No string/number simplification. Files/dependencies are not reduced again after input reduction; the audit can expose remaining removable items.
-- **Localisation:** relative Node/V8 stack locations, stack-order ranking, cautious retention evidence. No coverage, source maps, passing-run comparison or root-cause guarantee.
-- **Bisect:** native Git in a temporary clone, stable failing boundary twice and successful good boundary, skips unrelated failures. Distinct ancestor boundaries required. FOUND / AMBIGUOUS / BUDGET EXHAUSTED. Defaults: 32 evaluation attempts / 120 seconds; separate actual reproduction count. The first tested bad commit is evidence, not proof of causation. Dirty original branch/worktree remains untouched.
-- **Verify-fix:** verified capsules only. Fresh original verification, patch check/application in another copy, clean npm install, frozen original command/predicate. Reports target REMOVED / STILL PRESENT / DIFFERENT FAILURE, PATCH APPLICATION FAILED or INCONCLUSIVE; broader tests PASS / FAIL / NOT PROVIDED / NOT RUN / INCONCLUSIVE. Standard contextual Git patches up to 4 MiB; no symlinks, excluded files or generated-metadata edits. A removed target is not proof of a complete fix. Patches, like reproduction commands, must be trusted before executing patched code.
-
-Regression suite: **60 passed, 0 failed, 0 skipped** (`node --test test/*.test.js`).
-
-### Measured professionalisation evidence
-
-macOS arm64, Node 24.19.0, npm 10.9.2; single samples, not statistical performance claims. All capsule results below passed fresh verification. Original fixtures remained unchanged in automated tests.
-
-| Case | Before → after | Reproduction runs | Elapsed |
-| --- | --- | --- | --- |
-| File fixture with audit | 26 → 6 files | 37 | 1,155 ms |
-| Same fixture, persistent cache + fresh audit | 26 → 6 files | 8 | 242 ms |
-| npm fixture, offline + audit | 14 → 6 files; 5 → 2 dependencies | 26 | 6,674 ms |
-| JSON input + file audit | 21,813 → 58 bytes | 28 | 595 ms |
-| Synthetic 100 files | 100 → 2 | 36 | 907 ms |
-| Synthetic 500 files | 500 → 2 | 49 | 1,848 ms |
-| Synthetic 2,000 files | 2,000 → 2 | 59 | 4,260 ms |
-
-The cached case reused 29 persisted results; its 8 executions are two baselines, four fresh audit probes and two final verifications. JSON properties fell from 211 to 4 and array elements from 244 to 1; its file audit is not a certificate for minimal JSON. Known fixture stack location `src/parser.js:5:52` ranked first. A five-commit synthetic history identified its third revision. A contextual parser fix removed the target and passed the supplied regression command in an isolated copy.
-
-Synthetic benchmark accepted reductions: 11 / 15 / 19; cache hits: 4 / 3 / 5. No npm dependencies or audit requested there. Serial candidates remain the default; no speculative concurrency/scheduling changes. Peak workspace count was not instrumented.
-
-Current scope remains an advanced alpha: no flaky mode, multiple simultaneous predicates, npm workspaces, tested TypeScript/source maps, pack CLI, CI exporter or public-registry/native-addon compatibility matrix. Package metadata remains private/unreleased; nothing was published. Next milestone: representative real-project compatibility and reliability validation before beta/release preparation.
+No browser/Playwright reproduction, Docker, source-map coverage comparison, environment minimisation/bisect, flaky mode, composite predicates, iterative fixpoint, pack/unpack CLI, local dashboard or IDE extension. Git bisect and patch results are evidence, not proof of causation or a complete fix. Remote CI is not yet green because publication has not completed. The next milestone is independent application/historical-bug validation and remote platform verification, not another breadth expansion.

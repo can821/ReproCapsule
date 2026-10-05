@@ -1,7 +1,7 @@
 {
   "name": "reprocapsule",
-  "version": "0.3.0",
-  "description": "Reduce a failing Node.js project while preserving its failure signature",
+  "version": "0.4.0",
+  "description": "Failure-preserving reduction and verification for Node.js/npm debugging",
   "type": "module",
   "private": true,
   "engines": {
@@ -15,5 +15,20 @@
   },
   "devDependencies": {
     "typescript": "5.8.3"
+  },
+  "license": "UNLICENSED",
+  "files": [
+    "bin/",
+    "src/",
+    "examples/plugins/",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   }
 }
