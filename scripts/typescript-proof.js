@@ -29,12 +29,12 @@ try {
   await copyFiles(cwd,source,(await inventory(cwd)).files);
 } finally { await workspace.cleanup(); }
 const info = await inventory(source), before = snapshotId({hashes:await fileHashes(source,info.files),modes:info.modes});
-const result = await buildCapsule({repo:source,command:'npm test',output:path.join(output,'capsule'),offline:true,audit:true,maxRuns:60});
+const result = await buildCapsule({repo:source,command:'npm test',output:path.join(output,'capsule'),offline:true,audit:true,maxRuns:60, ...(process.argv.includes('--reduce-source') ? {reduceSource:'src/parser.ts',sourceParser:process.env.REPROCAPSULE_TYPESCRIPT}: {})});
 const verify=await verifyCapsule({capsule:result.output,offline:true});
 const after = await inventory(source), unchanged=before===snapshotId({hashes:await fileHashes(source,after.files),modes:after.modes});
 const top=result.manifest.diagnostics.locations[0];
 if(!verify.verified || !unchanged || top?.file!=='src/parser.ts' || top.line!==2 || !top.generated)throw new Error('TypeScript/source-map proof failed');
 const evidence={tool,runtime:process.version,command:'npm test',reduction:result.manifest.reduction,dependencies:result.manifest.dependencies,
- diagnostics:result.manifest.diagnostics,verify,sourceUnchanged:unchanged,elapsedMs:result.elapsedMs};
+ sourceReduction:result.manifest.sourceReduction,diagnostics:result.manifest.diagnostics,verify,sourceUnchanged:unchanged,elapsedMs:result.elapsedMs};
 await writeFile(path.join(output,'results.json'),JSON.stringify(evidence,null,2)+'\n');
-console.log(JSON.stringify({before:evidence.reduction.originalFileCount,after:evidence.reduction.finalFileCount,runs:evidence.reduction.reproductionAttempts,elapsedMs:evidence.elapsedMs,top,verified:verify.verified}));
+console.log(JSON.stringify({before:evidence.reduction.originalFileCount,after:evidence.reduction.finalFileCount,runs:evidence.reduction.reproductionAttempts,elapsedMs:evidence.elapsedMs,sourceReduction:evidence.sourceReduction,top,verified:verify.verified}));

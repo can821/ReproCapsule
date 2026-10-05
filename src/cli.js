@@ -29,6 +29,9 @@ Options:
   --max-time N                        Reduction deadline in seconds; final verification extra
   --audit-minimality                  Fresh single-removal audit within the run budget
   --reduce-input PATH                 Minimise one selected JSON file
+  --reduce-source PATH                Opt-in AST top-level JS/TS source reduction
+  --source-parser PATH                Explicit existing TypeScript compiler module
+  --source-max-runs N                  Source candidate budget (100)
   --input-max-runs N                  Limit JSON candidate evaluations (200)
   --cache-dir PATH                    Opt-in scoped persistent candidate outcomes
   --checkpoint PATH                   Atomic progress file outside source/output
@@ -49,7 +52,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -100,9 +103,10 @@ export async function main(args = process.argv.slice(2)) {
   const result = await buildCapsule({
     repo: values.repo ? path.resolve(values.repo) : undefined, command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
     baselineRuns: positive('baseline-runs', 2), matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
-    maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint, audit: values['audit-minimality'] ?? false, cacheDir: values['cache-dir'], reduceInput: values['reduce-input'], inputMaxRuns: positive('input-max-runs', 200),
+    maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint, audit: values['audit-minimality'] ?? false, cacheDir: values['cache-dir'], reduceInput: values['reduce-input'], inputMaxRuns: positive('input-max-runs', 200), reduceSource: values['reduce-source'], sourceParser: values['source-parser'], sourceMaxRuns: positive('source-max-runs', 100),
     ...restored,
     inputMaxRuns: positive('input-max-runs', restored.inputMaxRuns ?? 200),
+    sourceMaxRuns: positive('source-max-runs', restored.sourceMaxRuns ?? 100),
     audit: values['audit-minimality'] ?? restored.audit ?? false,
     cacheDir: values['cache-dir'] ?? restored.cacheDir,
     onProgress(event) {
@@ -117,7 +121,7 @@ export async function main(args = process.argv.slice(2)) {
   const summary = { success: true, capsule: result.output, verified: result.verification.verified, complete: counts.complete,
     files: { before: counts.originalFileCount, after: counts.finalFileCount }, dependencies: { before: deps.originalCount, after: deps.finalCount },
     runs: counts.reproductionAttempts, cacheHits: counts.cacheHits, cacheMisses: counts.cacheMisses, persistentCacheHits: counts.persistentCacheHits, elapsedMs: result.elapsedMs,
-    workspaces: result.manifest.workspaces, diagnostics: result.manifest.diagnostics, inputReduction: result.manifest.inputReduction, minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
+    workspaces: result.manifest.workspaces, diagnostics: result.manifest.diagnostics, inputReduction: result.manifest.inputReduction, sourceReduction: result.manifest.sourceReduction, minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
   if (values.json) console.log(JSON.stringify(summary));
   else console.log(`Failure preserved\nProject files: ${counts.originalFileCount} -> ${counts.finalFileCount} (${counts.reductionPercentage}% reduction)\nDependencies: ${deps.originalCount} -> ${deps.finalCount}\nRuns: ${counts.reproductionAttempts}; cache hits: ${counts.cacheHits}; elapsed: ${result.elapsedMs} ms\n${counts.complete ? 'CAPSULE VERIFIED' : 'PARTIAL CAPSULE VERIFIED: ' + counts.terminationReason}\nCapsule created at ${result.output}`);
   if (!values.json && result.manifest.workspaces.originalCount) console.log(`Workspaces: ${result.manifest.workspaces.originalCount} -> ${result.manifest.workspaces.finalCount}`);

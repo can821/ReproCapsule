@@ -12,5 +12,8 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
   }
 }

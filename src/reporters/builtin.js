@@ -2,7 +2,7 @@ const escape = value => String(value).replaceAll('&','&amp;').replaceAll('<','&l
 const sections = report => [
   ['Failure definition',{command:report.command,predicate:report.failurePredicate,signature:report.failureSignature}],
   ['Environment',report.environment],['Reduction',report.reduction],['Dependencies',report.dependencies],['Workspaces',report.workspaces],
-  ['Input',report.inputReduction],['Why items remain',report.explanations],['Minimality',report.minimality],['Suspicious locations',report.diagnostics],
+  ['Input',report.inputReduction],['Source',report.sourceReduction],['Why items remain',report.explanations],['Minimality',report.minimality],['Suspicious locations',report.diagnostics],
   ['Integrity',report.integrity],['Limitations',report.limitations],
 ];
 export default {

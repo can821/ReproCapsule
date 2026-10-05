@@ -12,7 +12,7 @@ export async function reportCapsule({ capsule, output, format = 'html', plugin }
   // Versioned plain-data boundary: no evaluator, paths, process handles or source text.
   const report = { schemaVersion:1, tool:m.tool, command:m.command, failurePredicate:m.failurePredicate, failureSignature:m.failureSignature,
     environment:m.environment, reduction:m.reduction, dependencies:m.dependencies, workspaces:m.workspaces ?? null,
-    inputReduction:m.inputReduction ?? null, explanations:m.explanations ?? null, minimality:m.minimality ?? null, diagnostics:m.diagnostics ?? null,
+    inputReduction:m.inputReduction ?? null, sourceReduction:m.sourceReduction ?? null, explanations:m.explanations ?? null, minimality:m.minimality ?? null, diagnostics:m.diagnostics ?? null,
     integrity:{status:'PASS',payloadFiles:Object.keys(m.fileHashes).length,execution:'NOT RUN; use verify for fresh reproduction'},
     limitations:['Commands and plugins execute with user permissions, not in a sandbox.','No source text or environment values are included by this report model. Review recorded commands before sharing.','No causal or globally minimal claim. Unsupported/uncollected evidence is not inferred.'] };
   let reporter = builtin;
