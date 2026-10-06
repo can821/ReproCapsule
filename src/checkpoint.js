@@ -4,7 +4,7 @@ import path from 'node:path';
 import { ReproError } from './errors.js';
 import { validateOutput } from './workspace.js';
 
-export const toolVersion = '0.5.0-alpha.1';
+export const toolVersion = '0.6.0-beta.1';
 const phases = ['workspaces', 'files', 'dependencies', 'cleanup', 'input', 'source', 'done'];
 export async function readCheckpoint(file) {
   let checkpoint;

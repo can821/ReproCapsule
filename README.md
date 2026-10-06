@@ -2,11 +2,11 @@
 
 ReproCapsule reduces failing Node.js/npm projects into smaller, independently verifiable reproduction capsules while preserving the target failure.
 
-**Status: beta candidate (package 0.5.0-alpha.1).** Five historical functional bugs across four independent projects are verified locally. Remote platform validation is still pending; the version remains alpha until that gate passes.
+**Status: 0.6.0-beta.1 pre-release preparation.** Five historical functional bugs across four independent projects are verified. Ubuntu and macOS Node 24 core checks and historical validation passed [remote CI for commit 1d5b707](https://github.com/can821/ReproCapsule/actions/runs/37524518426). This version-preparation commit still requires its own CI verification before a GitHub pre-release.
 
 ## Quick start
 
-Node 24+, npm 9+, macOS/Linux implementation. Only macOS was exercised locally; the Ubuntu/macOS Node 24 workflow is prepared, not yet remotely verified.
+Node 24+, npm 9+, macOS/Linux implementation. Local checks ran on macOS; remote Ubuntu/macOS Node 24 checks passed, including the real compiler and mapped source reduction proof.
 
 ```sh
 npm ci --ignore-scripts
@@ -82,7 +82,7 @@ Five independent published production distributions were tested: ms 6→5 files,
 
 **Not a sandbox.** Commands, selected parser/reporter modules and opted-in lifecycle scripts execute with user permissions, including access to network/external files. Installs occur in copies; lifecycle scripts default OFF. `.git`, `node_modules`, symlinks and known secret filenames are excluded. Filename filtering is not a secret-content scanner. Review command metadata before sharing. Hashes detect corruption, not malicious replacement of both content and metadata. No telemetry, automatic source upload or LLM integration.
 
-No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; only one actual Node version was available locally. Controlled wrappers test the mechanism, not cross-version compatibility. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix. Node 22 is not declared supported. Remote CI is pending; no npm publication is planned.
+No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; only one actual Node version was available locally. Controlled wrappers test the mechanism, not cross-version compatibility. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix. Node 22 is not declared supported. Ubuntu/macOS Node 24 remote CI passed on the linked commit; no npm publication is planned.
 
 ## Historical evidence and new workflows
 
