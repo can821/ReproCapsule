@@ -1,0 +1,64 @@
+{
+  "runtime": "v24.19.0",
+  "platform": "darwin",
+  "scope": "Single controlled 101-file sample; 20 ms sampled temporary file bytes, not exact high-water disk allocation or general throughput.",
+  "results": [
+    {
+      "name": "cold",
+      "wallMs": 573,
+      "originalFileCount": 101,
+      "finalFileCount": 1,
+      "originalCandidateCount": 101,
+      "finalCandidateCount": 1,
+      "reductionPercentage": 99.01,
+      "candidateAttempts": 16,
+      "acceptedReductions": 7,
+      "reproductionAttempts": 19,
+      "cacheHits": 1,
+      "cacheMisses": 15,
+      "persistentCacheHits": 0,
+      "installCount": 0,
+      "baselineRuns": 2,
+      "durationBeforePackageVerificationMs": 546,
+      "terminationReason": "complete",
+      "complete": true,
+      "guarantee": "reduction complete; 1-minimality not certified without a passing audit",
+      "rounds": 2
+    },
+    {
+      "name": "cached",
+      "wallMs": 145,
+      "originalFileCount": 101,
+      "finalFileCount": 1,
+      "originalCandidateCount": 101,
+      "finalCandidateCount": 1,
+      "reductionPercentage": 99.01,
+      "candidateAttempts": 16,
+      "acceptedReductions": 7,
+      "reproductionAttempts": 4,
+      "cacheHits": 16,
+      "cacheMisses": 0,
+      "persistentCacheHits": 15,
+      "installCount": 0,
+      "baselineRuns": 2,
+      "durationBeforePackageVerificationMs": 118,
+      "terminationReason": "complete",
+      "complete": true,
+      "guarantee": "reduction complete; 1-minimality not certified without a passing audit",
+      "rounds": 2
+    }
+  ],
+  "temporaryDisk": {
+    "sampledPeakBytes": 100078,
+    "samples": 35,
+    "intervalMs": 20
+  },
+  "packed": {
+    "format": "reprocapsule-gzip-json",
+    "version": 1,
+    "files": 4,
+    "payloadBytes": 4920,
+    "archiveBytes": 3465
+  },
+  "parallelEvaluation": false
+}

@@ -58,6 +58,7 @@ Output must be new and outside the source. Final verification always uses a fres
 `;
 
 export function cliExitCode(error) {
+  if (error.code === 'INTERRUPTED') return 130;
   if (error.code === 'INVALID_BASELINE') return 3;
   if (error.code === 'UNSTABLE_BASELINE') return 4;
   if (['CAPSULE_VERIFICATION_FAILED', 'FINAL_VERIFICATION_FAILED', 'INTEGRITY_FAILED', 'INVALID_CAPSULE'].includes(error.code)) return 5;

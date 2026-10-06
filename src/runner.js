@@ -27,7 +27,7 @@ export async function runCommand({ command, cwd, timeoutMs = 10_000, maxOutputBy
       },
     });
     const stdout = [], stderr = [];
-    let bytes = 0, timedOut = false, outputExceeded = false;
+    let bytes = 0, timedOut = false, outputExceeded = false, interrupted = false;
     const killGroup = (signal) => {
       if (!child.pid) return;
       try { process.kill(-child.pid, signal); }
@@ -38,6 +38,9 @@ export async function runCommand({ command, cwd, timeoutMs = 10_000, maxOutputBy
       killGroup('SIGTERM');
       escalation ??= setTimeout(() => killGroup('SIGKILL'), 100);
     };
+    const interrupt = () => { interrupted = true; stop(); };
+    process.once('SIGINT', interrupt); process.once('SIGTERM', interrupt);
+    const detach = () => { process.removeListener('SIGINT', interrupt); process.removeListener('SIGTERM', interrupt); };
     const timer = setTimeout(() => { timedOut = true; stop(); }, timeoutMs);
     const capture = (target) => (chunk) => {
       const remaining = Math.max(0, maxOutputBytes - bytes);
@@ -48,13 +51,14 @@ export async function runCommand({ command, cwd, timeoutMs = 10_000, maxOutputBy
     child.stdout.on('data', capture(stdout));
     child.stderr.on('data', capture(stderr));
     child.once('error', (cause) => {
-      clearTimeout(timer); clearTimeout(escalation); killGroup('SIGKILL');
+      detach(); clearTimeout(timer); clearTimeout(escalation); killGroup('SIGKILL');
       reject(new ReproError('COMMAND_START_FAILED', 'Could not start the reproduction command.', { cause }));
     });
     child.once('close', (exitCode, signal) => {
       // Also reap background descendants when the shell exited before them.
       killGroup('SIGKILL');
-      clearTimeout(timer); clearTimeout(escalation);
+      detach(); clearTimeout(timer); clearTimeout(escalation);
+      if (interrupted) { reject(new ReproError('INTERRUPTED', 'Execution interrupted; resume from the last accepted checkpoint.')); return; }
       resolve({
         exitCode, signal, timedOut, outputExceeded,
         stdout: Buffer.concat(stdout).toString('utf8'),

@@ -75,8 +75,10 @@
       "archiveBytes": 13184
     },
     "8": {
-      "status": "PARTIAL",
-      "scope": "Cache/budget/checkpoint tests and existing single-run performance evidence"
+      "status": "COMPLETED",
+      "scope": "Measured sequential cache performance; no parallel evaluation justified. SIGINT/SIGTERM while a child command is active cleans process group. Checkpoint recovery, changed source/runtime/schema, malformed cache and terminated child tests. SIGKILL cannot clean stale temporary directories automatically; resume uses new workspaces.",
+      "testsPassed": 14,
+      "evidence": "docs/performance-current.json"
     },
     "9": {
       "status": "PARTIAL",
