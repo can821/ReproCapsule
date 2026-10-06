@@ -4,8 +4,8 @@
     "format": "reprocapsule-gzip-json",
     "version": 1,
     "files": 8,
-    "payloadBytes": 27044,
-    "archiveBytes": 13184
+    "payloadBytes": 27405,
+    "archiveBytes": 13321
   },
   "integrity": "PASS",
   "verification": {

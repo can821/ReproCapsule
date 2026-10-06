@@ -1,0 +1,948 @@
+{
+  "case": "object-inspect-quotes",
+  "source": {
+    "file": "index.js",
+    "parser": "TypeScript",
+    "parserVersion": "5.8.3",
+    "originalBytes": 19000,
+    "originalStatements": 70,
+    "originalAstUnits": 350,
+    "finalBytes": 9239,
+    "finalStatements": 9,
+    "finalAstUnits": 150,
+    "attempts": 180,
+    "parseRejections": 0,
+    "rejections": {
+      "parse": 0,
+      "nonReducing": 0,
+      "targetChanged": 154
+    },
+    "acceptedReductions": 26,
+    "complete": false,
+    "terminationReason": "source-max-runs",
+    "retainedUnits": [
+      {
+        "kind": "FirstStatement",
+        "start": 1330,
+        "end": 1371,
+        "depth": 0
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 3256,
+        "end": 3302,
+        "depth": 0
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 3302,
+        "end": 3342,
+        "depth": 0
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 3410,
+        "end": 11132,
+        "depth": 0
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 3475,
+        "end": 3505,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 3505,
+        "end": 3694,
+        "depth": 1
+      },
+      {
+        "kind": "ThrowStatement",
+        "start": 3607,
+        "end": 3688,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 3694,
+        "end": 4048,
+        "depth": 1
+      },
+      {
+        "kind": "ThrowStatement",
+        "start": 3923,
+        "end": 4042,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 4048,
+        "end": 4128,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 4128,
+        "end": 4320,
+        "depth": 1
+      },
+      {
+        "kind": "ThrowStatement",
+        "start": 4204,
+        "end": 4314,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 4320,
+        "end": 4600,
+        "depth": 1
+      },
+      {
+        "kind": "ThrowStatement",
+        "start": 4505,
+        "end": 4594,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 4600,
+        "end": 4791,
+        "depth": 1
+      },
+      {
+        "kind": "ThrowStatement",
+        "start": 4687,
+        "end": 4785,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 4791,
+        "end": 4841,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 4841,
+        "end": 4914,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 4880,
+        "end": 4908,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 4914,
+        "end": 4967,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 4938,
+        "end": 4961,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 4967,
+        "end": 5048,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5003,
+        "end": 5042,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5048,
+        "end": 5131,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5084,
+        "end": 5125,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5131,
+        "end": 5361,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5166,
+        "end": 5253,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5191,
+        "end": 5243,
+        "depth": 3
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 5253,
+        "end": 5284,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5284,
+        "end": 5355,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5361,
+        "end": 5528,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 5396,
+        "end": 5439,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5439,
+        "end": 5522,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 5528,
+        "end": 5600,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5600,
+        "end": 5653,
+        "depth": 1
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 5640,
+        "end": 5651,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5653,
+        "end": 5785,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5725,
+        "end": 5779,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 5785,
+        "end": 5827,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 5827,
+        "end": 5963,
+        "depth": 1
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 5867,
+        "end": 5886,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 5928,
+        "end": 5957,
+        "depth": 2
+      },
+      {
+        "kind": "FunctionDeclaration",
+        "start": 5963,
+        "end": 6455,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 6010,
+        "end": 6110,
+        "depth": 2
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 6030,
+        "end": 6071,
+        "depth": 3
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 6071,
+        "end": 6100,
+        "depth": 3
+      },
+      {
+        "kind": "IfStatement",
+        "start": 6110,
+        "end": 6394,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 6134,
+        "end": 6211,
+        "depth": 3
+      },
+      {
+        "kind": "IfStatement",
+        "start": 6211,
+        "end": 6322,
+        "depth": 3
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 6254,
+        "end": 6308,
+        "depth": 4
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 6322,
+        "end": 6384,
+        "depth": 3
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 6394,
+        "end": 6449,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 6455,
+        "end": 6775,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 6511,
+        "end": 6585,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 6585,
+        "end": 6630,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 6630,
+        "end": 6769,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 6775,
+        "end": 7031,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 6800,
+        "end": 6928,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 6928,
+        "end": 7025,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7031,
+        "end": 7495,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 7057,
+        "end": 7120,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 7120,
+        "end": 7162,
+        "depth": 2
+      },
+      {
+        "kind": "ForStatement",
+        "start": 7162,
+        "end": 7317,
+        "depth": 2
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 7211,
+        "end": 7307,
+        "depth": 3
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 7317,
+        "end": 7335,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7335,
+        "end": 7404,
+        "depth": 2
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 7390,
+        "end": 7402,
+        "depth": 3
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 7404,
+        "end": 7471,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 7471,
+        "end": 7489,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7495,
+        "end": 7780,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7519,
+        "end": 7566,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 7551,
+        "end": 7564,
+        "depth": 3
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 7566,
+        "end": 7609,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7609,
+        "end": 7723,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 7656,
+        "end": 7713,
+        "depth": 3
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 7723,
+        "end": 7774,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7780,
+        "end": 8237,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 7804,
+        "end": 7850,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 7850,
+        "end": 8087,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 7949,
+        "end": 8077,
+        "depth": 3
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8087,
+        "end": 8155,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 8121,
+        "end": 8153,
+        "depth": 3
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 8155,
+        "end": 8231,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8237,
+        "end": 8579,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8289,
+        "end": 8573,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 8377,
+        "end": 8443,
+        "depth": 3
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 8529,
+        "end": 8563,
+        "depth": 3
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8579,
+        "end": 8903,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 8601,
+        "end": 8628,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8628,
+        "end": 8824,
+        "depth": 2
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 8654,
+        "end": 8814,
+        "depth": 3
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 8711,
+        "end": 8798,
+        "depth": 4
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 8824,
+        "end": 8897,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8903,
+        "end": 9187,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 8925,
+        "end": 8952,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 8952,
+        "end": 9108,
+        "depth": 2
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 8978,
+        "end": 9098,
+        "depth": 3
+      },
+      {
+        "kind": "ExpressionStatement",
+        "start": 9030,
+        "end": 9082,
+        "depth": 4
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9108,
+        "end": 9181,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9187,
+        "end": 9263,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9213,
+        "end": 9257,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9263,
+        "end": 9339,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9289,
+        "end": 9333,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9339,
+        "end": 9415,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9365,
+        "end": 9409,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9415,
+        "end": 9494,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9440,
+        "end": 9488,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9494,
+        "end": 9585,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9519,
+        "end": 9579,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9585,
+        "end": 9669,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9611,
+        "end": 9663,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9669,
+        "end": 9748,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9694,
+        "end": 9742,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9748,
+        "end": 9974,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 9930,
+        "end": 9968,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 9974,
+        "end": 10166,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 10118,
+        "end": 10160,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 10166,
+        "end": 11105,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 10208,
+        "end": 10251,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 10251,
+        "end": 10370,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 10370,
+        "end": 10440,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 10440,
+        "end": 10600,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 10600,
+        "end": 10747,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 10747,
+        "end": 10895,
+        "depth": 2
+      },
+      {
+        "kind": "IfStatement",
+        "start": 10895,
+        "end": 10947,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 10926,
+        "end": 10945,
+        "depth": 3
+      },
+      {
+        "kind": "IfStatement",
+        "start": 10947,
+        "end": 11042,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 10969,
+        "end": 11032,
+        "depth": 3
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 11042,
+        "end": 11099,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 11105,
+        "end": 11129,
+        "depth": 1
+      },
+      {
+        "kind": "FunctionDeclaration",
+        "start": 11132,
+        "end": 11298,
+        "depth": 0
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 11178,
+        "end": 11258,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 11258,
+        "end": 11296,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 13044,
+        "end": 13133,
+        "depth": 0
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 13110,
+        "end": 13130,
+        "depth": 1
+      },
+      {
+        "kind": "FunctionDeclaration",
+        "start": 13133,
+        "end": 13194,
+        "depth": 0
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 13158,
+        "end": 13192,
+        "depth": 1
+      },
+      {
+        "kind": "FunctionDeclaration",
+        "start": 15540,
+        "end": 16052,
+        "depth": 0
+      },
+      {
+        "kind": "IfStatement",
+        "start": 15577,
+        "end": 15867,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 15622,
+        "end": 15681,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 15681,
+        "end": 15772,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 15772,
+        "end": 15861,
+        "depth": 2
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 15867,
+        "end": 16008,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 16008,
+        "end": 16050,
+        "depth": 1
+      },
+      {
+        "kind": "FunctionDeclaration",
+        "start": 16052,
+        "end": 16322,
+        "depth": 0
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 16075,
+        "end": 16104,
+        "depth": 1
+      },
+      {
+        "kind": "FirstStatement",
+        "start": 16104,
+        "end": 16210,
+        "depth": 1
+      },
+      {
+        "kind": "IfStatement",
+        "start": 16210,
+        "end": 16242,
+        "depth": 1
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 16223,
+        "end": 16240,
+        "depth": 2
+      },
+      {
+        "kind": "ReturnStatement",
+        "start": 16242,
+        "end": 16320,
+        "depth": 1
+      }
+    ],
+    "scope": "Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command"
+  },
+  "reduction": {
+    "originalFileCount": 35,
+    "finalFileCount": 5,
+    "originalCandidateCount": 31,
+    "finalCandidateCount": 1,
+    "reductionPercentage": 85.71,
+    "candidateAttempts": 5,
+    "acceptedReductions": 4,
+    "reproductionAttempts": 188,
+    "cacheHits": 2,
+    "cacheMisses": 183,
+    "persistentCacheHits": 0,
+    "installCount": 0,
+    "baselineRuns": 2,
+    "durationBeforePackageVerificationMs": 4439,
+    "terminationReason": "source-max-runs",
+    "complete": false,
+    "guarantee": "PARTIAL: best verified state; no minimality claim"
+  },
+  "verified": true,
+  "originalUnchanged": true
+}

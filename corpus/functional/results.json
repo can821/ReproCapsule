@@ -58,12 +58,12 @@
       "persistentCacheHits": 0,
       "installCount": 0,
       "baselineRuns": 2,
-      "durationBeforePackageVerificationMs": 2197,
+      "durationBeforePackageVerificationMs": 2309,
       "terminationReason": "complete",
       "complete": true,
       "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
     },
-    "elapsedMs": 2224,
+    "elapsedMs": 2338,
     "executionCount": 70,
     "fixedPass": true,
     "freshVerification": {
@@ -213,12 +213,12 @@
       "persistentCacheHits": 0,
       "installCount": 0,
       "baselineRuns": 2,
-      "durationBeforePackageVerificationMs": 2366,
+      "durationBeforePackageVerificationMs": 2485,
       "terminationReason": "complete",
       "complete": true,
       "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
     },
-    "elapsedMs": 2394,
+    "elapsedMs": 2515,
     "executionCount": 74,
     "fixedPass": true,
     "freshVerification": {
@@ -320,12 +320,12 @@
       "persistentCacheHits": 0,
       "installCount": 0,
       "baselineRuns": 2,
-      "durationBeforePackageVerificationMs": 803,
+      "durationBeforePackageVerificationMs": 813,
       "terminationReason": "complete",
       "complete": true,
       "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
     },
-    "elapsedMs": 831,
+    "elapsedMs": 841,
     "executionCount": 38,
     "fixedPass": true,
     "freshVerification": {

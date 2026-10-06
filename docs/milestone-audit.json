@@ -36,7 +36,8 @@
         "unitsAfter": 5,
         "attempts": 10,
         "matching": "explicit Error: TS_TARGET; real tsc build required"
-      }
+      },
+      "historicalEvidence": "corpus/functional/deep-source.json: object-inspect 19000 -> 9239 bytes, 350 -> 150 AST units, 180 candidate budget reached; fresh verification PASS, original unchanged. Verified partial source reduction."
     },
     "3": {
       "status": "COMPLETED",
@@ -51,21 +52,23 @@
       "historicalEvidence": "corpus/functional/comparison.json; known object-inspect fix file index.js is executed by both versions, not uniquely localized"
     },
     "5": {
-      "status": "COMPLETED",
+      "status": "PARTIAL",
       "scope": "Conservative strict default; explicit ALL/ANY trees over exit code, stdout/stderr text, exception and stack lines. Bounded fresh-run observe command for intermittent evidence; reduction itself still requires stable baselines. No signal/regex matcher.",
       "testsPassed": 16,
       "controlledIntermittent": {
         "runs": 6,
         "target": 3,
         "observedReproductionRate": 0.5
-      }
+      },
+      "remaining": "Intermittent observation exists; flaky candidate reduction with thresholds/checkpoint evidence is not implemented."
     },
     "6": {
-      "status": "COMPLETED",
+      "status": "PARTIAL",
       "scope": "Existing Git bisect plus bounded ordered direct npm version experiments. Exact versions only, copied manifests, setup/other/target distinctions. Runtime search not implemented; only available Node 24 used.",
       "testsPassed": 5,
       "proof": "corpus/functional/dependency-boundary.json; supplied descending fixed-to-buggy order 1.13.3 PASS -> 1.13.2 FAIL, not chronological introduction proof",
-      "originalManifestUnchanged": true
+      "originalManifestUnchanged": true,
+      "remaining": "Runtime adapter unavailable; dependency search is bounded sequential enumeration, not logarithmic bisect."
     },
     "7": {
       "status": "COMPLETED",
@@ -82,8 +85,20 @@
     },
     "9": {
       "status": "PARTIAL",
-      "scope": "Node 24 Ubuntu/macOS CI configured; private UNLICENSED package; not publishable"
+      "scope": "Local final suite and package dry-run passed. Node24 Ubuntu/macOS CI configured but not executed remotely. private=true, UNLICENSED; publication blocked pending license choice and remote evidence."
     }
   },
-  "preexistingUntracked": "corpus/historical contains out-of-scope security cases; preserved, not run, not committed"
+  "preexistingUntracked": "Out-of-scope draft preparation moved to ignored work/unused-historical-preparation; never run or committed.",
+  "finalValidation": {
+    "passed": 84,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 17158.458625,
+    "runtime": "v24.19.0",
+    "platform": "darwin arm64",
+    "functionalCases": 3,
+    "independentProjects": 2,
+    "sourceUnchanged": true,
+    "publicationPerformed": false
+  }
 }

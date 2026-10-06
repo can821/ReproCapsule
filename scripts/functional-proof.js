@@ -5,7 +5,7 @@ import { buildCapsule } from '../src/capsule.js';
 import { runCommand } from '../src/runner.js';
 import { failureSignature } from '../src/failure-signature.js';
 import { verifyCapsule } from '../src/verify.js';
-import { inventory } from '../src/workspace.js';
+import { inventory, createWorkspace } from '../src/workspace.js';
 import { fileHashes } from '../src/integrity.js';
 const [prepared, output] = process.argv.slice(2).map(p => path.resolve(p));
 const cases = JSON.parse(await readFile(new URL('../corpus/functional/cases.json', import.meta.url)));
@@ -16,17 +16,31 @@ for (const c of cases) {
   const files = (await inventory(repo)).files;
   const before = await fileHashes(repo, files);
   const command = 'node probe.cjs';
-  const passing = await runCommand({cwd: fixed, command, timeoutMs: 10000});
+  // Probes execute only in fresh copies, including the known fixed control.
+  const fixedFiles = (await inventory(fixed)).files;
+  const fixedBefore = await fileHashes(fixed, fixedFiles);
+  async function probe(source) {
+    const workspace = await createWorkspace(source);
+    try {
+      const cwd = await workspace.materialize(workspace.files);
+      const result = await runCommand({cwd, command, timeoutMs: 10000});
+      return {result, signature: failureSignature(result, {roots:[cwd]})};
+    } finally { await workspace.cleanup(); }
+  }
+  const passing = (await probe(fixed)).result;
   assert.equal(passing.exitCode, 0, c.id + ' fixed version must pass');
-  const failing = await runCommand({cwd: repo, command, timeoutMs: 10000});
-  assert.equal(failing.exitCode, 1, c.id + ' buggy version must fail');
-  const signature = failureSignature(failing, {roots:[repo]});
+  const failing = await probe(repo);
+  assert.equal(failing.result.exitCode, 1, c.id + ' buggy version must fail');
+  const signature = failing.signature;
   assert.ok(signature);
   const reduced = await buildCapsule({repo, command, output:path.join(output,c.id), keep:['LICENSE'], audit:true});
   assert.equal(reduced.manifest.failureSignature.digest, signature.digest);
   const fresh = await verifyCapsule({capsule:reduced.output});
   assert.equal(fresh.verified,true);
+  assert.deepEqual((await inventory(repo)).files,files);
   assert.deepEqual(await fileHashes(repo,files),before);
+  assert.deepEqual((await inventory(fixed)).files,fixedFiles);
+  assert.deepEqual(await fileHashes(fixed,fixedFiles),fixedBefore);
   const m = reduced.manifest;
   results.push({id:c.id, package:c.package, upstream:c.reference, buggy:c.buggy, fixed:c.fixed,
     fixCommit:c.fixCommit,fixLocation:c.fixLocation,command,targetFailure:{strategy:signature.strategy,digest:signature.digest,exitCode:1},

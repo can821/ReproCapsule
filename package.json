@@ -1,6 +1,6 @@
 {
   "name": "reprocapsule",
-  "version": "0.4.0",
+  "version": "0.5.0-alpha.1",
   "description": "Failure-preserving reduction and verification for Node.js/npm debugging",
   "type": "module",
   "private": true,
@@ -30,5 +30,13 @@
     "typescript": {
       "optional": true
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/can821/ReproCapsule.git"
+  },
+  "bugs": {
+    "url": "https://github.com/can821/ReproCapsule/issues"
+  },
+  "homepage": "https://github.com/can821/ReproCapsule#readme"
 }
