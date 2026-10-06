@@ -45,8 +45,10 @@
       "proof": "Source removal makes extra.cjs removable next round; third round unchanged. One-round partial resumes to same 3-round fixpoint."
     },
     "4": {
-      "status": "PARTIAL",
-      "scope": "Failing stack/source maps only; no passing execution comparison"
+      "status": "COMPLETED",
+      "scope": "Explicit passing/failing commands or separate input directories; native V8 file coverage, mapped stack and optional retained capsule units. No range-level cross-revision comparison or root-cause assertion.",
+      "testsPassed": 3,
+      "historicalEvidence": "corpus/functional/comparison.json; known object-inspect fix file index.js is executed by both versions, not uniquely localized"
     },
     "5": {
       "status": "PARTIAL",

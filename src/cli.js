@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { compareExecutions } from './compare.js';
 import { parseArgs } from 'node:util';
 import { buildCapsule } from './capsule.js';
 import { verifyCapsule } from './verify.js';
@@ -11,6 +12,7 @@ import { ReproError } from './errors.js';
 const help = `ReproCapsule — reduce and independently verify failing npm projects
 
   reprocapsule reduce --repo PATH --command 'node test/repro.js' --out PATH
+  reprocapsule compare --repo PATH --command FAIL --passing-command PASS [--passing-repo PATH]
   reprocapsule bisect --repo PATH --good REF --bad REF --command COMMAND
   reprocapsule verify-fix CAPSULE --patch FILE [--test-command COMMAND]
   reprocapsule report CAPSULE --out FILE [--format html|markdown] [--plugin PATH]
@@ -53,7 +55,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality', 'converge']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -70,6 +72,10 @@ export async function main(args = process.argv.slice(2)) {
     installTimeoutMs: positive('install-timeout-ms', 60_000),
     npmPath: values['npm-path'], allowInstallScripts: values['allow-install-scripts'] ?? false, offline: values.offline ?? false,
   };
+  if (positionals[0] === 'compare' && positionals.length === 1) {
+    const result = await compareExecutions({repo:values.repo,passingRepo:values['passing-repo'],command:values.command,passingCommand:values['passing-command'],capsule:values.capsule,...common});
+    console.log(JSON.stringify(result)); return result;
+  }
   if (positionals[0] === 'bisect' && positionals.length === 1) {
     const result = await bisectRegression({ repo: values.repo, good: values.good, bad: values.bad, command: values.command, ...common,
       matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
