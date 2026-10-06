@@ -7,6 +7,11 @@ import { executeProject } from './project-runner.js';
 import { createPredicate, matchesPredicate } from './predicate.js';
 import { ReproError } from './errors.js';
 
+// Git 2.55 quotes the bisect term; older Git prints it without quotes.
+export function firstBadCommit(stdout) {
+  return stdout.match(/(?:^|\n)([a-f0-9]{40,64}) is the first (?:bad|'bad') commit(?:\r?\n|$)/)?.[1] ?? null;
+}
+
 export async function bisectRegression({ repo, good, bad, command, maxRuns = 32, maxTimeMs = 120_000, matchStderr, exitCode, ...execution }) {
   if (!repo || !good || !bad || !command?.trim() || !Number.isSafeInteger(maxRuns) || maxRuns < 3 || !Number.isSafeInteger(maxTimeMs) || maxTimeMs < 1) throw new ReproError('INVALID_ARGUMENTS', 'Bisect requires repo/good/bad/command and a budget of at least 3 runs.');
   const source = await realpath(repo), started = Date.now(), evaluated = [];
@@ -52,8 +57,8 @@ export async function bisectRegression({ repo, good, bad, command, maxRuns = 32,
     let result = await git(clone, ['bisect', 'start', badHash, goodHash], { allowFailure: true, timeoutMs: remaining() });
     const seen = new Set();
     while (true) {
-      const found = result.stdout.match(/(?:^|\n)([a-f0-9]{40,64}) is the first bad commit/);
-      if (found) return summary('FOUND', { firstTestedBadCommit: found[1], meaning: 'First tested bad commit identified by native git bisect; not proof of causation.' });
+      const found = firstBadCommit(result.stdout);
+      if (found) return summary('FOUND', { firstTestedBadCommit: found, meaning: 'First tested bad commit identified by native git bisect; not proof of causation.' });
       if (result.exitCode !== 0) {
         if (/only.*skip.*commits left|first bad commit could be any/i.test(result.stdout + result.stderr)) return summary('AMBIGUOUS', { meaning: 'Skipped revisions prevent a unique first bad commit.' });
         throw new ReproError('GIT_FAILED', 'Native git bisect could not continue.');

@@ -4,7 +4,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { temporary, fingerprint } from './helpers.js';
 import { git } from '../src/git.js';
-import { bisectRegression } from '../src/bisect.js';
+import { bisectRegression, firstBadCommit } from '../src/bisect.js';
 
 async function history(t, versions) {
   const root = await temporary(t), repo = path.join(root, 'history'); await mkdir(repo);
@@ -55,4 +55,15 @@ test('Git helper ignores inherited repository redirection and config injection',
   } finally {
     for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
   }
+});
+
+test('bisect completion accepts Git 2.55 quoted terms and older output without accepting ambiguity', () => {
+  const hash = 'a'.repeat(40);
+  for (const term of ['bad', "'bad'"]) {
+    assert.equal(firstBadCommit(`${hash} is the first ${term} commit\ncommit ${hash}\n`), hash);
+  }
+  assert.equal(firstBadCommit(`${'b'.repeat(64)} is the first 'bad' commit\n`), 'b'.repeat(64));
+  assert.equal(firstBadCommit(`The first 'bad' commit could be any of:\n${hash}\n`), null);
+  assert.equal(firstBadCommit(`${hash} is the first 'good' commit\n`), null);
+  assert.equal(firstBadCommit(`${hash} is the first bad commit candidate\n`), null);
 });
