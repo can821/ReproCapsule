@@ -2,7 +2,7 @@
 
 ReproCapsule reduces failing Node.js/npm projects into smaller, independently verifiable reproduction capsules while preserving the target failure.
 
-**Status: advanced alpha (0.5.0-alpha.1).** Three historical functional bugs in two independent libraries are verified locally. Complete independent application validation and remote platform verification remain limited.
+**Status: beta candidate (package 0.5.0-alpha.1).** Five historical functional bugs across four independent projects are verified locally. Remote platform validation is still pending; the version remains alpha until that gate passes.
 
 ## Quick start
 
@@ -15,7 +15,7 @@ node bin/reprocapsule.js verify ./capsule
 npm test
 ```
 
-Output must be new and outside the source. npm may be supplied with `--npm-path /path/to/npm-cli.js` or `REPROCAPSULE_NPM`. This tool never installs system software. Package remains private; npm publication has not occurred. No LICENSE has been selected (`UNLICENSED`).
+Output must be new and outside the source. npm may be supplied with `--npm-path /path/to/npm-cli.js` or `REPROCAPSULE_NPM`. This tool never installs system software. Package remains private; npm publication has not occurred. Licensed under MIT, Copyright (c) 2026 Can Yilmaz. `private: true` intentionally prevents npm publication.
 
 ## Working capabilities
 
@@ -44,7 +44,7 @@ node bin/reprocapsule.js report ./capsule --out ./summary.json --format json --p
 
 The project's command must build and run its reproduction (for example `tsc -p tsconfig.json && node dist/repro.js`). Tested with TypeScript 5.8.3. The tool does not replace a compiler or claim tsx/ts-node/Jest/Vitest compatibility.
 
-`--reduce-source PATH` selects one JS/TS file. TypeScript's parser selects top-level and nested statement lists, function bodies, and class members; candidates must parse and preserve the accepted failure. Newlines remain to avoid gratuitous strict stack changes. No regex-based source rewriting, expression simplification or global-minimum claim. Builds must be part of the reproduction command. `--source-max-runs` defaults to 100. Source content is not put in checkpoints; AST selection recipes are reconstructed against the unchanged snapshot. `--converge --max-rounds 5` reruns enabled stages until a full round accepts no change, the shared budget is exhausted, or the round limit is reached. Resume preserves the current round. This is convergence over enabled operations, not global minimality. File/dependency audits are reported independently; workspace/input/source remain NOT AUDITED.
+`--reduce-source PATH` selects one JS/TS file; `--reduce-source-all` processes retained eligible JS/TS files sequentially in deterministic order. Declaration files are excluded; limits are 256 eligible files and 1 MiB per source. The source budget is shared: an early file can consume it. Metrics identify measured files, and convergence may remove newly unnecessary files in later rounds. TypeScript's parser selects top-level and nested statement lists, function bodies, and class members; candidates must parse and preserve the accepted failure. Newlines remain to avoid gratuitous strict stack changes. No regex-based source rewriting, expression simplification or global-minimum claim. Builds must be part of the reproduction command. `--source-max-runs` defaults to 100. Source content is not put in checkpoints; AST selection recipes are reconstructed against the unchanged snapshot. `--converge --max-rounds 5` reruns enabled stages until a full round accepts no change, the shared budget is exhausted, or the round limit is reached. Resume preserves the current round. This is convergence over enabled operations, not global minimality. File/dependency audits are reported independently; workspace/input/source remain NOT AUDITED.
 
 TypeScript is a development dependency and optional peer. If it is unavailable to the tool, supply `--source-parser /path/to/typescript/lib/typescript.js` (trusted local module); no automatic download occurs. Local v3 sidecar/base64 source maps are bounded to 2 MiB and mapped only to retained project sources. Remote, indexed and escaping maps are ignored. [Node SourceMap API](https://nodejs.org/download/release/v24.18.0/docs/api/module.html#sourcemapfindoriginlinenumber-columnnumber).
 
@@ -62,7 +62,7 @@ Reports inspect integrity without executing the recorded command and do not embe
 
 ## Measured evidence
 
-**84 automated tests passed, 0 failed, 0 skipped** on macOS arm64 / Node 24.19.0 / npm 10.9.2. Single-run timings below are fixture measurements, not universal performance promises.
+**95 automated tests passed, 0 failed, 0 skipped** on macOS arm64 / Node 24.19.0 / npm 10.9.2. Single-run timings below are fixture measurements, not universal performance promises.
 
 | Case | Measured result |
 |---|---|
@@ -82,7 +82,7 @@ Five independent published production distributions were tested: ms 6→5 files,
 
 **Not a sandbox.** Commands, selected parser/reporter modules and opted-in lifecycle scripts execute with user permissions, including access to network/external files. Installs occur in copies; lifecycle scripts default OFF. `.git`, `node_modules`, symlinks and known secret filenames are excluded. Filename filtering is not a secret-content scanner. Review command metadata before sharing. Hashes detect corruption, not malicious replacement of both content and metadata. No telemetry, automatic source upload or LLM integration.
 
-No browser reproduction, additional package managers, range-level source-map coverage comparison, automated runtime-version search, or probabilistic intermittent reduction. Intermittent observation does not relax the reducer's stable baseline requirement. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix. Node 22 is not declared supported. Remote CI has not been run in this task; no push, tag, release or npm publish was performed.
+No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; only one actual Node version was available locally. Controlled wrappers test the mechanism, not cross-version compatibility. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix. Node 22 is not declared supported. Remote CI is pending; no npm publication is planned.
 
 ## Historical evidence and new workflows
 
@@ -102,8 +102,22 @@ node bin/reprocapsule.js verify ./fresh
 
 An explicit matcher JSON may be `{"all":[{"field":"exitCode","equals":1},{"field":"exception","contains":"TypeError: target"}]}`. Conditions support nested `all`/`any`, exit-code equality, and substring checks on stdout, stderr, exception or stack lines. The strict transcript predicate remains the default. Trees are bounded in depth and branching. Timeouts, truncated output and missing-module failures cannot satisfy explicit matchers. Use a narrow target; an overly broad substring is user-defined evidence, not exact error identity.
 
-Comparison uses Node's native V8 coverage to identify executed project files plus mapped stack locations. It does not compare coverage offsets across revisions. In the historical object-inspect case, the known fix file is shared execution, not uniquely suspicious. A matching strict capsule can supply retained files/source units. `observe` reports an observed reproduction rate, not probability. Dependency experiments test supplied exact versions in their supplied order, report adjacent PASS→FAIL observations and separate setup/unrelated failures. Transitive versions can change; versions use isolated copies, while the two repetitions within one version share its installation.
+Comparison uses Node's native V8 coverage to identify executed project files, nonblank lines intersecting innermost executed ranges, and mapped stack locations. Failing-only, passing-only and shared regions are aligned only for identical source hashes. Changed sources remain explicitly unaligned. TypeScript mappings use line-start origins, not exact expression coverage. Historical object-inspect executed regions overlap the known fix area in both versions; overlap does not establish causality. A matching strict capsule can supply retained files/source units. `observe` reports an observed reproduction rate, not probability. Dependency experiments test supplied exact versions in their supplied order, report adjacent PASS→FAIL observations and separate setup/unrelated failures. Transitive versions can change; versions use isolated copies, while the two repetitions within one version share its installation.
 
 Portable format v1 is gzip-compressed JSON with base64 file payloads and SHA-256 integrity. Maximum payload is 32 MiB (64 MiB expanded envelope); it refuses personal absolute paths and local working artifacts instead of rewriting source. Inspect/unpack do not execute commands; verify performs fresh preparation/execution. The historical object-inspect round-trip had 27,405 payload bytes and a 13,321-byte archive. Runtime requirements are recorded, not bundled. This format does not sign authorship.
 
 [Performance evidence](docs/performance-current.json): one controlled 101→1-file case took 573 ms / 19 executions cold, 145 ms / 4 executions cached, with two rounds. Temporary bytes peaked at a sampled 100,078 bytes at 20 ms intervals; this is not exact allocated-disk high-water usage. No parallel evaluation was added. See [milestone audit](docs/milestone-audit.json) for measured scope and limitations.
+
+## Beta engineering evidence
+
+[Expanded historical evidence](corpus/expanded/results.json) adds Zod 3.23.0 → 3.23.1 (a real TypeScript declaration-contract build regression; 54 → 9 files) and markdown-it 12.3.0 → 12.3.1 (upstream tab/list parsing regression; 66 → 62 files). markdown-it stopped at its 60-run budget and remains a verified partial reduction. These adapted published libraries are not full application or upstream-suite validation.
+
+Multi-file tests reduce two JS sources from 157 → 120 bytes and two TS sources from 146 → 109 bytes with a real compiler command; both reach a no-change round. The historical object-inspect production source reaches 19,000 → 1,968 bytes at a 250-source-candidate limit; later files were not reached. No global minimum is claimed.
+
+`--repeat-runs 4 --match-threshold 0.5 --matcher matcher.json` requires at least two matching observations in each fresh four-run batch. Default reduction stays deterministic. Every observation consumes execution/time budgets and prepares a fresh copy. Repeated mode disables candidate caching and minimality audits; checkpoint/resume preserves policy and accepted state. A controlled alternating case reduced 2 → 1 files with 2/4 matching observations and 24 total executions. The rate is observed frequency, not probability. `verify-fix` currently refuses repeated capsules.
+
+Dependency search retains sequential ordered experiments. Opt-in `--monotonic` assumes the supplied sequence is PASS→FAIL, searches by bisection, then independently rechecks adjacent values. Setup failures remain ambiguous. The real object-inspect supplied fixed→buggy order used four installations/eight executions in 2.210 seconds; it does not locate the historical introduction.
+
+`runtime-compare --repo ./project --script repro.cjs --runtimes runtimes.json --matcher matcher.json` accepts a JSON array of 1–10 absolute executable paths (including trusted wrappers). It reports two fresh observations per available runtime. npm preparation and child-process runtime resolution use the host toolchain; this is bounded top-level Node-script comparison, not full toolchain isolation. No runtime is installed or globally switched.
+
+[Portable final evidence](docs/beta-portable-proof.json) verifies fresh unpack/install/run for a two-source JS reduction, Zod, markdown-it and object-inspect. Archives were respectively 4,789; 4,289,652; 159,734; and 7,963 bytes in this run. Format v1 remains unchanged. [Programme measurements](docs/beta-progress.json) record scope and limitations. Checkpoint tests cover interruption, stale temporary workspaces, changed source/runtime, malformed state, and cache validation.

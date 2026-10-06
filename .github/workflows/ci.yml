@@ -31,3 +31,5 @@ jobs:
           node-version: '24'
       - run: python3 corpus/functional/prepare.py work/functional-source
       - run: node scripts/functional-proof.js work/functional-source work/functional-results
+      - run: python3 corpus/expanded/prepare.py work/expanded-source
+      - run: node scripts/expanded-proof.js work/expanded-source work/expanded-results

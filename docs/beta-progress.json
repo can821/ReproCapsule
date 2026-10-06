@@ -84,5 +84,35 @@
       "object-inspect"
     ],
     "formatUnchanged": true
+  },
+  "finalLocalGate": {
+    "status": "PASS",
+    "tests": {
+      "passed": 95,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 20761.703292,
+      "runtime": "Node 24.19.0",
+      "os": "macOS arm64"
+    },
+    "selectedE2E": {
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 7290.249042,
+      "scope": "real JS/TS multi-source, convergence, comparison, repeated candidate/resume, Git bisect, patch verification, explicit runtime wrappers"
+    },
+    "historicalFreshRoundTrips": "docs/beta-portable-proof.json",
+    "npmPack": {
+      "status": "PASS",
+      "entries": 38,
+      "licenseIncluded": true,
+      "private": true
+    },
+    "trackedWorkingArtifacts": 0,
+    "personalPathsInEvidence": 0
+  },
+  "remoteGate": {
+    "status": "PENDING"
   }
 }
