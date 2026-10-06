@@ -8,6 +8,7 @@ import { buildCapsule } from '../src/capsule.js';
 import { verifyCapsule } from '../src/verify.js';
 import { fileHashes, snapshotId } from '../src/integrity.js';
 const output = path.resolve(process.argv[2] ?? 'work/typescript-proof');
+await mkdir(path.dirname(output), { recursive: true });
 await mkdir(output);
 const tool = { name: 'typescript', version: '5.8.3', commit: '68cead182cc24afdc3f1ce7c8ff5853aba14b65a', license: 'Apache-2.0',
   url: 'https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz', integrity: 'sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==' };
