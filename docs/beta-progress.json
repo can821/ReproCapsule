@@ -1,6 +1,47 @@
 {
   "startingHead": "08fe8fd4f792d3eef3da582605efc16f76099bbb",
-  "baseline": {"passed":84,"failed":0,"skipped":0,"durationMs":18628.487333,"runtime":"Node 24.19.0","platform":"macOS arm64"},
-  "license": {"status":"COMPLETED","license":"MIT","private":true},
-  "historicalValidation": {"status":"COMPLETED","bugs":5,"projects":4,"evidence":"corpus/expanded/results.json","limitation":"markdown-it is a verified budget-limited partial reduction; Zod validates its TypeScript declaration contract"}
+  "baseline": {
+    "passed": 84,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 18628.487333,
+    "runtime": "Node 24.19.0",
+    "platform": "macOS arm64"
+  },
+  "license": {
+    "status": "COMPLETED",
+    "license": "MIT",
+    "private": true
+  },
+  "historicalValidation": {
+    "status": "COMPLETED",
+    "bugs": 5,
+    "projects": 4,
+    "evidence": "corpus/expanded/results.json",
+    "limitation": "markdown-it is a verified budget-limited partial reduction; Zod validates its TypeScript declaration contract"
+  },
+  "multiFileSource": {
+    "status": "COMPLETED",
+    "focusedTestsPassed": 11,
+    "recheckedMultiFileTests": 3,
+    "js": {
+      "filesReduced": 2,
+      "bytes": [
+        157,
+        120
+      ],
+      "fixpoint": true
+    },
+    "ts": {
+      "filesReduced": 2,
+      "bytes": [
+        146,
+        109
+      ],
+      "realBuild": true,
+      "fixpoint": true
+    },
+    "historical": "corpus/functional/multi-source.json: first production file 19000 -> 1968 bytes; 250 source evaluations; verified partial, later files not reached",
+    "limits": "256 eligible retained files; declaration files excluded; 1 MiB per file; source budget shared sequentially, so an early file can consume it. Byte totals explicitly cover measured files."
+  }
 }

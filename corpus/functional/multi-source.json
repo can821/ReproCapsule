@@ -1,0 +1,247 @@
+{
+  "case": "object-inspect-quotes",
+  "source": {
+    "mode": "multiple",
+    "parser": "TypeScript",
+    "parserVersion": "5.8.3",
+    "eligibleFiles": 27,
+    "filesConsidered": 3,
+    "filesReduced": 1,
+    "originalBytes": 19000,
+    "finalBytes": 1968,
+    "measuredFiles": 1,
+    "perFile": [
+      {
+        "file": "index.js",
+        "parser": "TypeScript",
+        "parserVersion": "5.8.3",
+        "originalBytes": 19000,
+        "originalStatements": 70,
+        "originalAstUnits": 350,
+        "finalBytes": 1968,
+        "finalStatements": 7,
+        "finalAstUnits": 27,
+        "attempts": 250,
+        "parseRejections": 0,
+        "rejections": {
+          "parse": 0,
+          "nonReducing": 0,
+          "targetChanged": 212
+        },
+        "acceptedReductions": 38,
+        "complete": false,
+        "terminationReason": "source-max-runs",
+        "retainedUnits": [
+          {
+            "kind": "FirstStatement",
+            "start": 1330,
+            "end": 1371,
+            "depth": 0
+          },
+          {
+            "kind": "ExpressionStatement",
+            "start": 3410,
+            "end": 11132,
+            "depth": 0
+          },
+          {
+            "kind": "FirstStatement",
+            "start": 3475,
+            "end": 3505,
+            "depth": 1
+          },
+          {
+            "kind": "IfStatement",
+            "start": 3505,
+            "end": 3694,
+            "depth": 1
+          },
+          {
+            "kind": "ThrowStatement",
+            "start": 3607,
+            "end": 3688,
+            "depth": 2
+          },
+          {
+            "kind": "IfStatement",
+            "start": 5048,
+            "end": 5131,
+            "depth": 1
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 5084,
+            "end": 5125,
+            "depth": 2
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 5963,
+            "end": 6455,
+            "depth": 1
+          },
+          {
+            "kind": "IfStatement",
+            "start": 6010,
+            "end": 6110,
+            "depth": 2
+          },
+          {
+            "kind": "ExpressionStatement",
+            "start": 6030,
+            "end": 6071,
+            "depth": 3
+          },
+          {
+            "kind": "ExpressionStatement",
+            "start": 6071,
+            "end": 6100,
+            "depth": 3
+          },
+          {
+            "kind": "IfStatement",
+            "start": 6110,
+            "end": 6394,
+            "depth": 2
+          },
+          {
+            "kind": "FirstStatement",
+            "start": 6134,
+            "end": 6211,
+            "depth": 3
+          },
+          {
+            "kind": "IfStatement",
+            "start": 6211,
+            "end": 6322,
+            "depth": 3
+          },
+          {
+            "kind": "ExpressionStatement",
+            "start": 6254,
+            "end": 6308,
+            "depth": 4
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 6322,
+            "end": 6384,
+            "depth": 3
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 6394,
+            "end": 6449,
+            "depth": 2
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 11132,
+            "end": 11298,
+            "depth": 0
+          },
+          {
+            "kind": "FirstStatement",
+            "start": 11178,
+            "end": 11258,
+            "depth": 1
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 11258,
+            "end": 11296,
+            "depth": 1
+          },
+          {
+            "kind": "FirstStatement",
+            "start": 13044,
+            "end": 13133,
+            "depth": 0
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 13133,
+            "end": 13194,
+            "depth": 0
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 15540,
+            "end": 16052,
+            "depth": 0
+          },
+          {
+            "kind": "FirstStatement",
+            "start": 15867,
+            "end": 16008,
+            "depth": 1
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 16008,
+            "end": 16050,
+            "depth": 1
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 16052,
+            "end": 16322,
+            "depth": 0
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 16242,
+            "end": 16320,
+            "depth": 1
+          }
+        ],
+        "scope": "Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command"
+      }
+    ],
+    "skipped": [],
+    "attempts": 250,
+    "acceptedReductions": 38,
+    "currentPass": {
+      "attempts": 250,
+      "acceptedReductions": 38
+    },
+    "complete": false,
+    "terminationReason": "source-max-runs",
+    "scope": "Deterministic sequential reduction of retained JS/TS files; declaration files excluded; byte totals cover measured files only; no global minimality"
+  },
+  "reduction": {
+    "originalFileCount": 35,
+    "finalFileCount": 5,
+    "originalCandidateCount": 33,
+    "finalCandidateCount": 3,
+    "reductionPercentage": 85.71,
+    "candidateAttempts": 31,
+    "acceptedReductions": 8,
+    "reproductionAttempts": 278,
+    "cacheHits": 7,
+    "cacheMisses": 274,
+    "persistentCacheHits": 0,
+    "installCount": 0,
+    "baselineRuns": 2,
+    "durationBeforePackageVerificationMs": 6762,
+    "terminationReason": "source-max-runs",
+    "complete": false,
+    "guarantee": "PARTIAL: best verified state; no minimality claim"
+  },
+  "convergence": {
+    "enabled": true,
+    "rounds": [],
+    "round": 1,
+    "stable": false,
+    "scope": "No-change round over enabled reductions; no global minimality claim"
+  },
+  "verification": {
+    "success": true,
+    "integrity": "pass",
+    "install": "not-required",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "elapsedMs": 6792
+}

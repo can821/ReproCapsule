@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { reduceFiles } from './reducer.js';
@@ -83,6 +83,66 @@ export async function loadSourceInput(root, files, file, parserPath, saved) {
         attempts, parseRejections:rejections.parse, rejections, acceptedReductions:accepted, complete, terminationReason,
         retainedUnits:units.filter(u => effective(retained).has(u.id)).map(u => ({kind:u.kind,start:u.start,end:u.end,depth:u.depth})),
         scope:'Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command' };
+    }};
+  return value;
+}
+
+// Selection adapter keeps the established single-file reducer and recipes intact.
+export async function loadSourceSelection(root, files, selection, parserPath, saved) {
+  if (!selection) return null;
+  if (selection !== true) {
+    const single = await loadSourceInput(root, files, selection, parserPath, saved);
+    single.protectedFiles = [single.file];
+    single.bytes = () => Buffer.byteLength(single.content);
+    single.apply = async (cwd, retained, text = single.content) => {
+      if (retained.includes(single.file)) await writeFile(path.join(cwd,single.file),text);
+    };
+    return single;
+  }
+  const eligible = files.filter(f => /\.[cm]?[jt]sx?$/.test(f) && !/\.d\.[cm]?ts$/.test(f)).sort();
+  if (eligible.length > 256) throw new ReproError('INVALID_INPUT','Automatic source selection is bounded to 256 JS/TS files.');
+  let ts;
+  try { ts = require(parserPath ? path.resolve(parserPath) : 'typescript'); }
+  catch { throw new ReproError('SOURCE_PARSER_UNAVAILABLE','Install TypeScript or supply --source-parser PATH.'); }
+  if (saved && (saved.recipeVersion !== 1 || saved.mode !== 'multiple' || saved.parserVersion !== ts.version || !saved.sources || Object.keys(saved.sources).some(f=>!eligible.includes(f)))) throw new ReproError('CHECKPOINT_INCOMPATIBLE','Multi-file source selection/parser changed.');
+  const sources = new Map(), outcomes = new Map(Object.entries(saved?.outcomes ?? {})), state = {outcomes:saved?.outcomes ?? {},recipeVersion:1,mode:'multiple',parserVersion:ts.version,sources:{}};
+  for (const file of eligible.filter(f=>saved?.sources[f])) {
+    const source = await loadSourceInput(root,files,file,parserPath,saved.sources[file]);
+    sources.set(file,source);state.sources[file]=source.state;
+  }
+  const value = {state,protectedFiles:[],metrics:{mode:'multiple',parser:'TypeScript',parserVersion:ts.version,eligibleFiles:eligible.length},
+    get content() {return Object.fromEntries([...sources].sort(([a],[b])=>a.localeCompare(b)).map(([file,source])=>[file,source.content]));},
+    bytes(retained=files) {return [...sources].filter(([file])=>retained.includes(file)).reduce((n,[,s])=>n+Buffer.byteLength(s.content),0);},
+    async apply(cwd,retained,texts=value.content) {
+      for(const [file,text] of Object.entries(texts))if(retained.includes(file))await writeFile(path.join(cwd,file),text);
+    },
+    async reduce(preserves,{retainedFiles=files,shouldStop,maxAttempts=100,onAccepted=async()=>{}}={}) {
+      let attempts=0,accepted=0,complete=true,terminationReason='complete';
+      const considered=eligible.filter(f=>retainedFiles.includes(f)), skipped=[];
+      for(const file of considered) {
+        const stop=shouldStop?.() || (attempts>=maxAttempts?'source-max-runs':null);
+        if(stop){complete=false;terminationReason=stop;break;}
+        let source=sources.get(file);
+        if(!source) {
+          try {source=await loadSourceInput(root,files,file,parserPath);}
+          catch(error){if(error.code!=='INVALID_INPUT')throw error;skipped.push({file,reason:'unparseable-or-over-file-limit'});continue;}
+          sources.set(file,source);state.sources[file]=source.state;
+        }
+        const result=await source.reduce(text=>preserves({...value.content,[file]:text}),{
+          shouldStop,maxAttempts:maxAttempts-attempts,onAccepted});
+        const previous=outcomes.get(file);
+        const cumulative={...result,attempts:(previous?.attempts ?? 0)+result.attempts,acceptedReductions:(previous?.acceptedReductions ?? 0)+result.acceptedReductions,
+          rejections:Object.fromEntries(Object.entries(result.rejections).map(([key,n])=>[key,n+(previous?.rejections?.[key] ?? 0)]))};
+        outcomes.set(file,cumulative);state.outcomes[file]=cumulative;
+        attempts+=result.attempts;accepted+=result.acceptedReductions;
+        if(!result.complete){complete=false;terminationReason=result.terminationReason;break;}
+      }
+      const perFile=[...outcomes].sort(([a],[b])=>a.localeCompare(b)).filter(([f])=>retainedFiles.includes(f)).map(([,r])=>r);
+      return {...value.metrics,filesConsidered:considered.length,filesReduced:perFile.filter(r=>r.finalBytes<r.originalBytes).length,
+        originalBytes:perFile.reduce((n,r)=>n+r.originalBytes,0),finalBytes:perFile.reduce((n,r)=>n+r.finalBytes,0),
+        measuredFiles:perFile.length,perFile,skipped,attempts:perFile.reduce((n,r)=>n+r.attempts,0),acceptedReductions:perFile.reduce((n,r)=>n+r.acceptedReductions,0),currentPass:{attempts,acceptedReductions:accepted},complete:complete&&skipped.length===0,
+        terminationReason:complete&&skipped.length?'source-files-skipped':terminationReason,
+        scope:'Deterministic sequential reduction of retained JS/TS files; declaration files excluded; byte totals cover measured files only; no global minimality'};
     }};
   return value;
 }
