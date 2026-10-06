@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { dependencyBoundary } from './experiments.js';
 import { readFile } from 'node:fs/promises';
 import { observeReproduction } from './observe.js';
 import { compareExecutions } from './compare.js';
@@ -14,6 +15,7 @@ import { ReproError } from './errors.js';
 const help = `ReproCapsule — reduce and independently verify failing npm projects
 
   reprocapsule reduce --repo PATH --command 'node test/repro.js' --out PATH
+  reprocapsule dependency-boundary --repo PATH --command COMMAND --dependency NAME --versions V1,V2 --matcher FILE
   reprocapsule observe --repo PATH --command COMMAND --matcher FILE [--runs N]
   reprocapsule compare --repo PATH --command FAIL --passing-command PASS [--passing-repo PATH]
   reprocapsule bisect --repo PATH --good REF --bad REF --command COMMAND
@@ -59,7 +61,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule', 'matcher', 'runs'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule', 'matcher', 'runs', 'dependency', 'versions', 'max-experiments'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality', 'converge']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -77,6 +79,10 @@ export async function main(args = process.argv.slice(2)) {
     npmPath: values['npm-path'], allowInstallScripts: values['allow-install-scripts'] ?? false, offline: values.offline ?? false,
   };
   const matcher = values.matcher ? JSON.parse(await readFile(values.matcher,'utf8')) : undefined;
+  if (positionals[0] === 'dependency-boundary' && positionals.length === 1) {
+    const result = await dependencyBoundary({repo:values.repo,command:values.command,dependency:values.dependency,values:values.versions?.split(','),matcher,matchStderr:values['match-stderr'],maxExperiments:positive('max-experiments',30),...common});
+    console.log(JSON.stringify(result)); return result;
+  }
   if (positionals[0] === 'observe' && positionals.length === 1) {
     const result = await observeReproduction({repo:values.repo,command:values.command,runs:positive('runs',10),matcher,matchStderr:values['match-stderr'],...common});
     console.log(JSON.stringify(result)); return result;

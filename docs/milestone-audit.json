@@ -61,8 +61,11 @@
       }
     },
     "6": {
-      "status": "PARTIAL",
-      "scope": "Git bisect exists; dependency/runtime experiments absent"
+      "status": "COMPLETED",
+      "scope": "Existing Git bisect plus bounded ordered direct npm version experiments. Exact versions only, copied manifests, setup/other/target distinctions. Runtime search not implemented; only available Node 24 used.",
+      "testsPassed": 5,
+      "proof": "corpus/functional/dependency-boundary.json; supplied descending fixed-to-buggy order 1.13.3 PASS -> 1.13.2 FAIL, not chronological introduction proof",
+      "originalManifestUnchanged": true
     },
     "7": {
       "status": "PARTIAL",
