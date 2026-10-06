@@ -1,0 +1,6 @@
+{
+  "startingHead": "08fe8fd4f792d3eef3da582605efc16f76099bbb",
+  "baseline": {"passed":84,"failed":0,"skipped":0,"durationMs":18628.487333,"runtime":"Node 24.19.0","platform":"macOS arm64"},
+  "license": {"status":"COMPLETED","license":"MIT","private":true},
+  "historicalValidation": {"status":"COMPLETED","bugs":5,"projects":4,"evidence":"corpus/expanded/results.json","limitation":"markdown-it is a verified budget-limited partial reduction; Zod validates its TypeScript declaration contract"}
+}

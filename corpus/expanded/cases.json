@@ -1,0 +1,107 @@
+[
+  {
+    "id": "zod-default-generic",
+    "reference": "https://github.com/colinhacks/zod/releases/tag/v3.23.1",
+    "fixCommit": "59f48723d36c423d9e10b3bd52325a7998314230",
+    "fixLocation": "src/types.ts",
+    "buggy": {
+      "name": "zod",
+      "version": "3.23.0",
+      "revision": "39a588a35fd4a636b94f56bf7e45b0e1e35c4c8d",
+      "tarball": "https://registry.npmjs.org/zod/-/zod-3.23.0.tgz",
+      "integrity": "sha512-OFLT+LTocvabn6q76BTwVB0hExEBS0IduTr3cqZyMqEDbOnYmcU+y0tUAYbND4uwclpBGi4I4UUBGzylWpjLGA==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "name": "zod",
+      "version": "3.23.1",
+      "revision": "2ff5ceb428634de0ea4501495039c05a8e95b60a",
+      "tarball": "https://registry.npmjs.org/zod/-/zod-3.23.1.tgz",
+      "integrity": "sha512-fwxuO7wwRmBv1+OvqlZF0t73s3xhR0Cr7mRIFSca6Z/ZNsrzvCPl4Az4KJqi1mgkXdODuan91Cyyg8it0my1ag==",
+      "license": "MIT"
+    },
+    "support": [
+      {
+        "name": "typescript",
+        "version": "5.8.3",
+        "revision": "68cead182cc24afdc3f1ce7c8ff5853aba14b65a",
+        "tarball": "https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz",
+        "integrity": "sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==",
+        "license": "Apache-2.0"
+      }
+    ],
+    "command": "node node_modules/typescript/bin/tsc -p tsconfig.json",
+    "files": {
+      "probe.ts": "import { ZodType } from \"./lib\";\nexport function parseText(schema: ZodType): string {\n  return schema.parse(\"example\");\n}\n",
+      "tsconfig.json": "{\"compilerOptions\": {\"strict\": true, \"noEmit\": true, \"target\": \"ES2020\", \"moduleResolution\": \"node\", \"skipLibCheck\": true}, \"files\": [\"probe.ts\"]}\n"
+    }
+  },
+  {
+    "id": "markdown-it-tabs",
+    "reference": "https://github.com/markdown-it/markdown-it/issues/830",
+    "fixLocation": "lib/rules_block/list.js",
+    "buggy": {
+      "name": "markdown-it",
+      "version": "12.3.0",
+      "revision": "2e31d3430187d2eee1ba120c954783eebb93b4e8",
+      "tarball": "https://registry.npmjs.org/markdown-it/-/markdown-it-12.3.0.tgz",
+      "integrity": "sha512-T345UZZ6ejQWTjG6PSEHplzNy5m4kF6zvUpHVDv8Snl/pEU0OxIK0jGg8YLVNwJvT8E0YJC7/2UvssJDk/wQCQ==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "name": "markdown-it",
+      "version": "12.3.1",
+      "revision": "76469e83dc1a1e3ed943b483b554003a666bddf7",
+      "tarball": "https://registry.npmjs.org/markdown-it/-/markdown-it-12.3.1.tgz",
+      "integrity": "sha512-xu6ZyQc/W1mWRwBOZT5ePVVn77MhHYkWwiAMgy/oBwUwSD2fS5xND3oIN44RCqVMgpNbhKtzZs9B75mC7FHwTQ==",
+      "license": "MIT"
+    },
+    "support": [
+      {
+        "name": "mdurl",
+        "version": "1.0.1",
+        "revision": "8bfd33610062a71155cc64254271555a49db8332",
+        "tarball": "https://registry.npmjs.org/mdurl/-/mdurl-1.0.1.tgz",
+        "integrity": "sha512-/sKlQJCBYVY9Ers9hqzKou4H6V5UWc/M59TH2dvkt+84itfnq7uFOMLpOiOS4ujvHP4etln18fmIxA5R5fll0g==",
+        "license": "MIT"
+      },
+      {
+        "name": "argparse",
+        "version": "2.0.1",
+        "revision": "e373563876f1c049826c21bd1c9388f6a5737a3e",
+        "tarball": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
+        "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+        "license": "Python-2.0"
+      },
+      {
+        "name": "entities",
+        "version": "2.1.0",
+        "revision": "b33f702bdd9afd06beb05b46a27547e3e7e03295",
+        "tarball": "https://registry.npmjs.org/entities/-/entities-2.1.0.tgz",
+        "integrity": "sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==",
+        "license": "BSD-2-Clause"
+      },
+      {
+        "name": "uc.micro",
+        "version": "1.0.6",
+        "revision": "4cf1080e1b1765fc7699d0ec7482e3a18fc9e2ee",
+        "tarball": "https://registry.npmjs.org/uc.micro/-/uc.micro-1.0.6.tgz",
+        "integrity": "sha512-8Y75pvTYkLJW2hWQHXxoqRgV7qb9B+9vFEtidML+7koHUFapnVJAZ6cKs+Qjz5Aw3aZWHMC6u0wJE3At+nSGwA==",
+        "license": "MIT"
+      },
+      {
+        "name": "linkify-it",
+        "version": "3.0.3",
+        "revision": "14e16f70f97833e57fd56248868fa4d5c9be1b8c",
+        "tarball": "https://registry.npmjs.org/linkify-it/-/linkify-it-3.0.3.tgz",
+        "integrity": "sha512-ynTsyrFSdE5oZ/O9GEf00kPngmOfVwazR5GKDq6EYfhlpFug3J2zybX56a2PRRpc9P+FuSoGNAwjlbDs9jJBPQ==",
+        "license": "MIT"
+      }
+    ],
+    "command": "node probe.cjs",
+    "files": {
+      "input.md": "1. asd\n\t2. asd\n",
+      "probe.cjs": "const assert = require('node:assert/strict');\nconst text = require('node:fs').readFileSync('input.md', 'utf8');\nconst actual = require('.')('commonmark').render(text);\nassert.equal(actual, '<ol>\\n<li>asd\\n2. asd</li>\\n</ol>\\n');\n"
+    }
+  }
+]
