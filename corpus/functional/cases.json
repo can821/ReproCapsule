@@ -1,0 +1,68 @@
+[
+  {
+    "id": "dayjs-object-null",
+    "package": "dayjs",
+    "buggy": {
+      "version": "1.11.8",
+      "revision": "b3624de619d6e734cd0ffdbbd3502185041c1b60",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.8.tgz",
+      "integrity": "sha512-LcgxzFoWMEPO7ggRv1Y2N31hUf2R0Vj7fuy/m+Bg1K8rr+KAs1AEy4y9jd5DXe8pbHgX+srkHNS7TH6Q6ZhYeQ==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "version": "1.11.9",
+      "revision": "5044cc839779c4bd399943e8e764bacfce5eaffc",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.9.tgz",
+      "integrity": "sha512-QvzAURSbQ0pKdIye2txOzNaHmxtUBXerpY0FJsFXUMKbIZeFm5ht1LS/jFsrncjnmtv8HsG0W2g6c0zUjZWmpA==",
+      "license": "MIT"
+    },
+    "reference": "https://github.com/iamkun/dayjs/issues/2277",
+    "fixCommit": "89bf31ce0a36dcfc892029dc019d85d3654cf5fb",
+    "fixLocation": "src/plugin/objectSupport/index.js",
+    "probe": "const dayjs = require('.');\ndayjs.extend(require('./plugin/objectSupport'));\nrequire('node:assert/strict').equal(dayjs(null).isValid(), false);\n"
+  },
+  {
+    "id": "dayjs-duration-get",
+    "package": "dayjs",
+    "buggy": {
+      "version": "1.11.9",
+      "revision": "5044cc839779c4bd399943e8e764bacfce5eaffc",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.9.tgz",
+      "integrity": "sha512-QvzAURSbQ0pKdIye2txOzNaHmxtUBXerpY0FJsFXUMKbIZeFm5ht1LS/jFsrncjnmtv8HsG0W2g6c0zUjZWmpA==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "version": "1.11.10",
+      "revision": "e56a8703dcc3820196972f53990010daf248726b",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.10.tgz",
+      "integrity": "sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==",
+      "license": "MIT"
+    },
+    "reference": "https://github.com/iamkun/dayjs/pull/2369",
+    "fixCommit": "061aa7ed6c31696974665fc9b11a74d30841ebed",
+    "fixLocation": "src/plugin/duration/index.js",
+    "probe": "const dayjs = require('.');\ndayjs.extend(require('./plugin/duration'));\nrequire('node:assert/strict').equal(dayjs.duration({ hours: 7, minutes: 10 }).days(), 0);\n"
+  },
+  {
+    "id": "object-inspect-quotes",
+    "package": "object-inspect",
+    "buggy": {
+      "version": "1.13.2",
+      "revision": "6a565ed4ce7181fe6c263b7893652e7a7dd9ae91",
+      "tarball": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.2.tgz",
+      "integrity": "sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "version": "1.13.3",
+      "revision": "361db0752858a3e195260c54448c1169a96d8a1a",
+      "tarball": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.3.tgz",
+      "integrity": "sha512-kDCGIbxkDSXE3euJZZXzc6to7fCrKHNI/hSRQnRuQ+BWjFNzZwiFF8fj/6o2t2G9/jTj8PSIYTfCLelLZEeRpA==",
+      "license": "MIT"
+    },
+    "reference": "https://github.com/inspect-js/object-inspect/commit/5137f8f7bea69a7fc671bb683fd35f244f38fc52",
+    "fixCommit": "5137f8f7bea69a7fc671bb683fd35f244f38fc52",
+    "fixLocation": "index.js",
+    "probe": "const inspect = require('.');\nrequire('node:assert/strict').equal(inspect('\"', { quoteStyle: 'double' }), JSON.stringify('\"'));\n"
+  }
+]

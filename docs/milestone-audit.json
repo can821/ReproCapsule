@@ -1,0 +1,18 @@
+{
+  "startingBranch": "main",
+  "startingHead": "be494d5169024bc5ef4ddfe750feaf79f788dbb7",
+  "startingVersion": "0.4.0",
+  "baselineTests": {"passed": 71, "failed": 0, "skipped": 0},
+  "milestones": {
+    "1": {"status": "COMPLETED", "evidence": "corpus/functional/results.json", "scope": "3 historical bugs, 2 projects; published npm distributions"},
+    "2": {"status": "PARTIAL", "scope": "One JS/TS file; top-level AST deletion only"},
+    "3": {"status": "NOT STARTED", "scope": "Existing pipeline has one post-dependency file cleanup, no fixpoint coordinator"},
+    "4": {"status": "PARTIAL", "scope": "Failing stack/source maps only; no passing execution comparison"},
+    "5": {"status": "PARTIAL", "scope": "Strict transcripts or opt-in stderr substring; repeat baseline detects instability"},
+    "6": {"status": "PARTIAL", "scope": "Git bisect exists; dependency/runtime experiments absent"},
+    "7": {"status": "PARTIAL", "scope": "Integrity-checked capsule directory/verify exists; portable archive lifecycle absent"},
+    "8": {"status": "PARTIAL", "scope": "Cache/budget/checkpoint tests and existing single-run performance evidence"},
+    "9": {"status": "PARTIAL", "scope": "Node 24 Ubuntu/macOS CI configured; private UNLICENSED package; not publishable"}
+  },
+  "preexistingUntracked": "corpus/historical contains out-of-scope security cases; preserved, not run, not committed"
+}

@@ -1,0 +1,371 @@
+[
+  {
+    "id": "dayjs-object-null",
+    "package": "dayjs",
+    "upstream": "https://github.com/iamkun/dayjs/issues/2277",
+    "buggy": {
+      "version": "1.11.8",
+      "revision": "b3624de619d6e734cd0ffdbbd3502185041c1b60",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.8.tgz",
+      "integrity": "sha512-LcgxzFoWMEPO7ggRv1Y2N31hUf2R0Vj7fuy/m+Bg1K8rr+KAs1AEy4y9jd5DXe8pbHgX+srkHNS7TH6Q6ZhYeQ==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "version": "1.11.9",
+      "revision": "5044cc839779c4bd399943e8e764bacfce5eaffc",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.9.tgz",
+      "integrity": "sha512-QvzAURSbQ0pKdIye2txOzNaHmxtUBXerpY0FJsFXUMKbIZeFm5ht1LS/jFsrncjnmtv8HsG0W2g6c0zUjZWmpA==",
+      "license": "MIT"
+    },
+    "fixCommit": "89bf31ce0a36dcfc892029dc019d85d3654cf5fb",
+    "fixLocation": "src/plugin/objectSupport/index.js",
+    "command": "node probe.cjs",
+    "targetFailure": {
+      "strategy": "normalized-transcript-sha256",
+      "digest": "36402a3a15a785f93586402c77df8b8a2b42ffa5475104e5888e4402e93428a0",
+      "exitCode": 1
+    },
+    "runtime": {
+      "node": "v24.19.0",
+      "npm": null,
+      "platform": "darwin",
+      "osRelease": "25.6.0",
+      "arch": "arm64"
+    },
+    "packageManager": "npm distribution; no runtime dependencies/install required",
+    "adaptation": "Published production files unchanged; removed development dependencies/scripts; added upstream-derived assertion probe. Not a complete upstream development checkout.",
+    "files": {
+      "before": 448,
+      "after": 5
+    },
+    "dependencies": {
+      "before": 0,
+      "after": 0
+    },
+    "input": "Fixed upstream-derived probe; input reduction not requested",
+    "source": "Production source bytes unchanged; source reduction not requested",
+    "reduction": {
+      "originalFileCount": 448,
+      "finalFileCount": 5,
+      "originalCandidateCount": 446,
+      "finalCandidateCount": 3,
+      "reductionPercentage": 98.88,
+      "candidateAttempts": 62,
+      "acceptedReductions": 17,
+      "reproductionAttempts": 67,
+      "cacheHits": 2,
+      "cacheMisses": 60,
+      "persistentCacheHits": 0,
+      "installCount": 0,
+      "baselineRuns": 2,
+      "durationBeforePackageVerificationMs": 2197,
+      "terminationReason": "complete",
+      "complete": true,
+      "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+    },
+    "elapsedMs": 2224,
+    "executionCount": 70,
+    "fixedPass": true,
+    "freshVerification": {
+      "success": true,
+      "integrity": "pass",
+      "install": "not-required",
+      "failure": "pass",
+      "verified": true,
+      "exitCode": 1
+    },
+    "originalUnchanged": true,
+    "retainedFiles": [
+      "LICENSE",
+      "dayjs.min.js",
+      "package.json",
+      "plugin/objectSupport.js",
+      "probe.cjs"
+    ],
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Project-local stack evidence, optionally mapped to retained original sources; not proof of root cause. No coverage or passing comparison collected.",
+      "locations": [
+        {
+          "file": "plugin/objectSupport.js",
+          "line": 1,
+          "column": 412,
+          "stackDepth": 0,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        },
+        {
+          "file": "plugin/objectSupport.js",
+          "line": 1,
+          "column": 887,
+          "stackDepth": 1,
+          "evidence": [
+            "deeper-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        },
+        {
+          "file": "dayjs.min.js",
+          "line": 1,
+          "column": 2038,
+          "stackDepth": 2,
+          "evidence": [
+            "deeper-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        },
+        {
+          "file": "dayjs.min.js",
+          "line": 1,
+          "column": 1869,
+          "stackDepth": 3,
+          "evidence": [
+            "deeper-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        },
+        {
+          "file": "probe.cjs",
+          "line": 3,
+          "column": 37,
+          "stackDepth": 4,
+          "evidence": [
+            "deeper-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ],
+      "sourceMaps": {
+        "supported": "bounded local v3 sidecar/base64 maps; retained project sources only",
+        "mappedLocations": 0
+      }
+    }
+  },
+  {
+    "id": "dayjs-duration-get",
+    "package": "dayjs",
+    "upstream": "https://github.com/iamkun/dayjs/pull/2369",
+    "buggy": {
+      "version": "1.11.9",
+      "revision": "5044cc839779c4bd399943e8e764bacfce5eaffc",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.9.tgz",
+      "integrity": "sha512-QvzAURSbQ0pKdIye2txOzNaHmxtUBXerpY0FJsFXUMKbIZeFm5ht1LS/jFsrncjnmtv8HsG0W2g6c0zUjZWmpA==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "version": "1.11.10",
+      "revision": "e56a8703dcc3820196972f53990010daf248726b",
+      "tarball": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.10.tgz",
+      "integrity": "sha512-vjAczensTgRcqDERK0SR2XMwsF/tSvnvlv6VcF2GIhg6Sx4yOIt/irsr1RDJsKiIyBzJDpCoXiWWq28MqH2cnQ==",
+      "license": "MIT"
+    },
+    "fixCommit": "061aa7ed6c31696974665fc9b11a74d30841ebed",
+    "fixLocation": "src/plugin/duration/index.js",
+    "command": "node probe.cjs",
+    "targetFailure": {
+      "strategy": "normalized-transcript-sha256",
+      "digest": "eac086b3a5daa1d2a1c54a3a65e48e160146e4787fa57bbcf25424f5f83b14de",
+      "exitCode": 1
+    },
+    "runtime": {
+      "node": "v24.19.0",
+      "npm": null,
+      "platform": "darwin",
+      "osRelease": "25.6.0",
+      "arch": "arm64"
+    },
+    "packageManager": "npm distribution; no runtime dependencies/install required",
+    "adaptation": "Published production files unchanged; removed development dependencies/scripts; added upstream-derived assertion probe. Not a complete upstream development checkout.",
+    "files": {
+      "before": 448,
+      "after": 5
+    },
+    "dependencies": {
+      "before": 0,
+      "after": 0
+    },
+    "input": "Fixed upstream-derived probe; input reduction not requested",
+    "source": "Production source bytes unchanged; source reduction not requested",
+    "reduction": {
+      "originalFileCount": 448,
+      "finalFileCount": 5,
+      "originalCandidateCount": 446,
+      "finalCandidateCount": 3,
+      "reductionPercentage": 98.88,
+      "candidateAttempts": 67,
+      "acceptedReductions": 18,
+      "reproductionAttempts": 71,
+      "cacheHits": 3,
+      "cacheMisses": 64,
+      "persistentCacheHits": 0,
+      "installCount": 0,
+      "baselineRuns": 2,
+      "durationBeforePackageVerificationMs": 2366,
+      "terminationReason": "complete",
+      "complete": true,
+      "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+    },
+    "elapsedMs": 2394,
+    "executionCount": 74,
+    "fixedPass": true,
+    "freshVerification": {
+      "success": true,
+      "integrity": "pass",
+      "install": "not-required",
+      "failure": "pass",
+      "verified": true,
+      "exitCode": 1
+    },
+    "originalUnchanged": true,
+    "retainedFiles": [
+      "LICENSE",
+      "dayjs.min.js",
+      "package.json",
+      "plugin/duration.js",
+      "probe.cjs"
+    ],
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Project-local stack evidence, optionally mapped to retained original sources; not proof of root cause. No coverage or passing comparison collected.",
+      "locations": [
+        {
+          "file": "probe.cjs",
+          "line": 3,
+          "column": 31,
+          "stackDepth": 0,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ],
+      "sourceMaps": {
+        "supported": "bounded local v3 sidecar/base64 maps; retained project sources only",
+        "mappedLocations": 0
+      }
+    }
+  },
+  {
+    "id": "object-inspect-quotes",
+    "package": "object-inspect",
+    "upstream": "https://github.com/inspect-js/object-inspect/commit/5137f8f7bea69a7fc671bb683fd35f244f38fc52",
+    "buggy": {
+      "version": "1.13.2",
+      "revision": "6a565ed4ce7181fe6c263b7893652e7a7dd9ae91",
+      "tarball": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.2.tgz",
+      "integrity": "sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==",
+      "license": "MIT"
+    },
+    "fixed": {
+      "version": "1.13.3",
+      "revision": "361db0752858a3e195260c54448c1169a96d8a1a",
+      "tarball": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.3.tgz",
+      "integrity": "sha512-kDCGIbxkDSXE3euJZZXzc6to7fCrKHNI/hSRQnRuQ+BWjFNzZwiFF8fj/6o2t2G9/jTj8PSIYTfCLelLZEeRpA==",
+      "license": "MIT"
+    },
+    "fixCommit": "5137f8f7bea69a7fc671bb683fd35f244f38fc52",
+    "fixLocation": "index.js",
+    "command": "node probe.cjs",
+    "targetFailure": {
+      "strategy": "normalized-transcript-sha256",
+      "digest": "4920a94f4b4e7d259b456ab1f9792ec672caf0218911ce3c231581dd12247fd1",
+      "exitCode": 1
+    },
+    "runtime": {
+      "node": "v24.19.0",
+      "npm": null,
+      "platform": "darwin",
+      "osRelease": "25.6.0",
+      "arch": "arm64"
+    },
+    "packageManager": "npm distribution; no runtime dependencies/install required",
+    "adaptation": "Published production files unchanged; removed development dependencies/scripts; added upstream-derived assertion probe. Not a complete upstream development checkout.",
+    "files": {
+      "before": 35,
+      "after": 5
+    },
+    "dependencies": {
+      "before": 0,
+      "after": 0
+    },
+    "input": "Fixed upstream-derived probe; input reduction not requested",
+    "source": "Production source bytes unchanged; source reduction not requested",
+    "reduction": {
+      "originalFileCount": 35,
+      "finalFileCount": 5,
+      "originalCandidateCount": 33,
+      "finalCandidateCount": 3,
+      "reductionPercentage": 85.71,
+      "candidateAttempts": 31,
+      "acceptedReductions": 8,
+      "reproductionAttempts": 35,
+      "cacheHits": 3,
+      "cacheMisses": 28,
+      "persistentCacheHits": 0,
+      "installCount": 0,
+      "baselineRuns": 2,
+      "durationBeforePackageVerificationMs": 803,
+      "terminationReason": "complete",
+      "complete": true,
+      "guarantee": "1-minimal with respect to the audited candidate set; no global minimum claim"
+    },
+    "elapsedMs": 831,
+    "executionCount": 38,
+    "fixedPass": true,
+    "freshVerification": {
+      "success": true,
+      "integrity": "pass",
+      "install": "not-required",
+      "failure": "pass",
+      "verified": true,
+      "exitCode": 1
+    },
+    "originalUnchanged": true,
+    "retainedFiles": [
+      "LICENSE",
+      "index.js",
+      "package.json",
+      "probe.cjs",
+      "util.inspect.js"
+    ],
+    "diagnostics": {
+      "method": "project-local-stack-order",
+      "status": "EVIDENCE AVAILABLE",
+      "meaning": "Project-local stack evidence, optionally mapped to retained original sources; not proof of root cause. No coverage or passing comparison collected.",
+      "locations": [
+        {
+          "file": "probe.cjs",
+          "line": 2,
+          "column": 31,
+          "stackDepth": 0,
+          "evidence": [
+            "top-project-stack-frame",
+            "present-in-accepted-failure-stack",
+            "retained-file-low-weight",
+            "required-for-reproduction-not-proof-of-bug"
+          ]
+        }
+      ],
+      "sourceMaps": {
+        "supported": "bounded local v3 sidecar/base64 maps; retained project sources only",
+        "mappedLocations": 0
+      }
+    }
+  }
+]
