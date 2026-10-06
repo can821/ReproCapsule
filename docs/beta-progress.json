@@ -68,5 +68,10 @@
       "executions": 8,
       "elapsedMs": 2210
     }
+  },
+  "runtimeComparison": {
+    "status": "COMPLETED",
+    "focusedTestsPassed": 2,
+    "scope": "Existing explicit Node executables or trusted wrappers only; fresh copied observations; host npm preparation and host child runtimes. One actual Node version available, controlled wrapper test is not cross-version evidence."
   }
 }
