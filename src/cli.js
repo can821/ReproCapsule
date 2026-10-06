@@ -34,6 +34,7 @@ Options:
   --npm-path PATH                     Existing npm executable or npm-cli.js
   --allow-install-scripts              Explicit opt-in; default ignores scripts
   --offline                           npm offline mode (local fixture packages)
+  --monotonic                        Explicit ordered PASS→FAIL assumption for dependency binary search
   --repeat-runs N --match-threshold R  Opt-in repeated candidate acceptance; explicit matcher required
   --baseline-runs N                   Clean baseline repetitions, 2–100 (2)
   --matcher FILE                     JSON ALL/ANY conditions for exitCode/stdout/stderr/exception/stack
@@ -70,7 +71,7 @@ export function cliExitCode(error) {
 export async function main(args = process.argv.slice(2)) {
   const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule', 'matcher', 'runs', 'dependency', 'versions', 'max-experiments', 'repeat-runs', 'match-threshold'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
-  for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality', 'converge', 'reduce-source-all']) options[name] = { type: 'boolean' };
+  for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality', 'converge', 'reduce-source-all', 'monotonic']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
   const { values, positionals } = parseArgs({ args, allowPositionals: true, options });
   if (values.help) { console.log(help); return; }
@@ -92,7 +93,7 @@ export async function main(args = process.argv.slice(2)) {
   }
   const matcher = values.matcher ? JSON.parse(await readFile(values.matcher,'utf8')) : undefined;
   if (positionals[0] === 'dependency-boundary' && positionals.length === 1) {
-    const result = await dependencyBoundary({repo:values.repo,command:values.command,dependency:values.dependency,values:values.versions?.split(','),matcher,matchStderr:values['match-stderr'],maxExperiments:positive('max-experiments',30),...common});
+    const result = await dependencyBoundary({repo:values.repo,command:values.command,dependency:values.dependency,values:values.versions?.split(','),matcher,matchStderr:values['match-stderr'],maxExperiments:positive('max-experiments',30),monotonic:values.monotonic ?? false,...common});
     console.log(JSON.stringify(result)); return result;
   }
   if (positionals[0] === 'observe' && positionals.length === 1) {

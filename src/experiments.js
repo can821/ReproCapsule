@@ -19,7 +19,35 @@ export async function orderedExperiment({values,evaluate,maxExperiments=30}) {
  return {evaluated,boundaries,firstTestedFailingValue:evaluated.find(e=>e.status==='FAIL')?.value ?? null,
   complete:evaluated.length===values.length,meaning:'Adjacent tested PASS→FAIL values in the supplied order; not causality, monotonicity, or a claim about untested versions.'};
 }
-export async function dependencyBoundary({repo,command,dependency,values,matcher,matchStderr,exitCode,maxExperiments=30,...options}) {
+export async function monotonicExperiment({values,evaluate,maxExperiments=30}) {
+ if(!Array.isArray(values)||values.length<2||values.length>100||new Set(values).size!==values.length||!Number.isSafeInteger(maxExperiments)||maxExperiments<1||maxExperiments>100)throw new ReproError('INVALID_ARGUMENTS','Invalid ordered values or experiment budget.');
+ const evaluated=[];let status='BUDGET EXHAUSTED',boundary=null;
+ const observe=async index=>{
+  if(evaluated.length>=maxExperiments)return null;
+  const result=await evaluate(values[index]);evaluated.push({value:values[index],...result});return result.status;
+ };
+ let low=0,high=values.length-1;
+ const first=await observe(low),last=await observe(high);
+ if(first!==null&&last!==null){
+  if(first!=='PASS'||last!=='FAIL')status='INVALID OR UNTESTABLE ENDPOINTS';
+  else {
+   status='SEARCHING';
+   while(high-low>1){
+    const mid=Math.floor((low+high)/2),outcome=await observe(mid);
+    if(outcome===null){status='BUDGET EXHAUSTED';break;}
+    if(outcome==='PASS')low=mid;else if(outcome==='FAIL')high=mid;else {status='AMBIGUOUS';break;}
+   }
+   if(status==='SEARCHING'){
+    const left=await observe(low),right=await observe(high);
+    status=left===null||right===null?'BUDGET EXHAUSTED':left==='PASS'&&right==='FAIL'?'FOUND':'AMBIGUOUS';
+    if(status==='FOUND')boundary={passing:values[low],failing:values[high]};
+   }
+  }
+ }
+ return {status,evaluated,boundaries:boundary?[boundary]:[],firstTestedFailingValue:boundary?.failing??null,complete:status==='FOUND',
+  meaning:'Binary boundary search under the explicit user-supplied monotonic ordering assumption; adjacent values rechecked in fresh experiments. Untested versions are not proven; no causality claim.'};
+}
+export async function dependencyBoundary({repo,command,dependency,values,matcher,matchStderr,exitCode,maxExperiments=30,monotonic=false,...options}) {
  const predicate=createPredicate({matcher,matchStderr,exitCode});
  if(predicate.type==='strict') throw new ReproError('INVALID_ARGUMENTS','Dependency experiments require an explicit target matcher.');
  if(typeof dependency!=='string' || !/^(?:@[a-z0-9_.-]+\/)?[a-z0-9_.-]+$/i.test(dependency) || !Array.isArray(values) || values.some(v=>typeof v!=='string' || !/^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?(?:\+[a-z0-9.-]+)?$/i.test(v))) throw new ReproError('INVALID_ARGUMENTS','Use exact dependency versions, not tags or ranges.');
@@ -29,7 +57,7 @@ export async function dependencyBoundary({repo,command,dependency,values,matcher
   const section=['dependencies','devDependencies','optionalDependencies'].find(s=>Object.hasOwn(original[s] ?? {},dependency));
   if(!section || original.workspaces) throw new ReproError('INVALID_ARGUMENTS','Choose an existing direct dependency of a non-workspace npm project.');
   const npm=await discoverNpm({npmPath:options.npmPath,cwd:workspace.snapshot});
-  const result=await orderedExperiment({values,maxExperiments,evaluate:async value=>{
+  const result=await (monotonic?monotonicExperiment:orderedExperiment)({values,maxExperiments,evaluate:async value=>{
    const cwd=await workspace.materialize(workspace.files),pkg=structuredClone(original);
    pkg[section][dependency]=value;
    await writeFile(path.join(cwd,'package.json'),JSON.stringify(pkg,null,2)+'\n');

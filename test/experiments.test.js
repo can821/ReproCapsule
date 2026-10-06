@@ -11,3 +11,12 @@ test('dependency experiments require pinned versions and a target before any mut
  await assert.rejects(dependencyBoundary({values:['1.0.0','latest'],dependency:'sample',matchStderr:'TARGET'}),{code:'INVALID_ARGUMENTS'});
  await assert.rejects(dependencyBoundary({values:['1.0.0','2.0.0'],dependency:'sample'}),{code:'INVALID_ARGUMENTS'});
 });
+test('explicit monotonic search tests logarithmically and rechecks adjacent boundary',async()=>{
+ const {monotonicExperiment}=await import('../src/experiments.js');
+ const values=Array.from({length:32},(_,i)=>String(i));
+ const r=await monotonicExperiment({values,evaluate:async value=>({status:Number(value)<13?'PASS':'FAIL'})});
+ assert.equal(r.status,'FOUND');assert.deepEqual(r.boundaries,[{passing:'12',failing:'13'}]);assert.ok(r.evaluated.length<=9);
+ assert.deepEqual(r.evaluated.slice(-2).map(r=>r.value),['12','13']);
+ const ambiguous=await monotonicExperiment({values:['a','b','c'],evaluate:async v=>({status:v==='a'?'PASS':v==='c'?'FAIL':'SETUP FAILURE'})});assert.equal(ambiguous.status,'AMBIGUOUS');assert.deepEqual(ambiguous.boundaries,[]);
+ const limited=await monotonicExperiment({values,maxExperiments:2,evaluate:async v=>({status:v==='0'?'PASS':'FAIL'})});assert.equal(limited.status,'BUDGET EXHAUSTED');assert.equal(limited.firstTestedFailingValue,null);
+});

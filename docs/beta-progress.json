@@ -57,5 +57,16 @@
     "evidence": "docs/repeated-reduction-proof.json",
     "scope": "Explicit repeat-runs 2\u2013100 plus fractional match-threshold; fresh copy/install per observation, shared run/time budgets and checkpoint configuration. Deterministic default unchanged; no candidate caching or minimality audit in repeated mode.",
     "limits": "Observed frequency is not probability. verify-fix explicitly refuses repeated capsules rather than inferring a fix from one passing sample."
+  },
+  "dependencySearch": {
+    "status": "COMPLETED",
+    "focusedTestsPassed": 3,
+    "evidence": "corpus/functional/monotonic-boundary.json",
+    "scope": "Optional explicitly assumed monotonic binary search, fresh adjacent rechecks; sequential default unchanged. Historical supplied order is fixed then buggy, not introduction chronology.",
+    "measurements": {
+      "installs": 4,
+      "executions": 8,
+      "elapsedMs": 2210
+    }
   }
 }
