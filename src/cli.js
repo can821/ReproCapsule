@@ -29,7 +29,7 @@ Options:
   --max-time N                        Reduction deadline in seconds; final verification extra
   --audit-minimality                  Fresh single-removal audit within the run budget
   --reduce-input PATH                 Minimise one selected JSON file
-  --reduce-source PATH                Opt-in AST top-level JS/TS source reduction
+  --reduce-source PATH                Opt-in hierarchical JS/TS AST source reduction
   --source-parser PATH                Explicit existing TypeScript compiler module
   --source-max-runs N                  Source candidate budget (100)
   --input-max-runs N                  Limit JSON candidate evaluations (200)
