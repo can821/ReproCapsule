@@ -1,0 +1,106 @@
+{
+  "scope": "Controlled alternating external counter supplied via environment, not a probabilistic workload",
+  "policy": {
+    "mode": "repeated",
+    "runs": 4,
+    "threshold": 0.5,
+    "minMatches": 2
+  },
+  "observations": {
+    "baseline": {
+      "matching": 2,
+      "total": 4,
+      "observedReproductionRate": 0.5,
+      "requiredMatches": 2,
+      "outcomes": [
+        "TARGET",
+        "PASS",
+        "TARGET",
+        "PASS"
+      ]
+    },
+    "candidates": [
+      {
+        "candidate": "623dd9f136815d89df30fdddee3dcc1c566fde685a584e5032689efd669164eb",
+        "matching": 0,
+        "total": 4,
+        "observedReproductionRate": 0,
+        "requiredMatches": 2,
+        "outcomes": [
+          "OTHER FAILURE",
+          "OTHER FAILURE",
+          "OTHER FAILURE",
+          "OTHER FAILURE"
+        ],
+        "accepted": false
+      },
+      {
+        "candidate": "2d05697835ad6672beb9f50924c1c1e6d467a11b8da373c5ef7f32725f81f912",
+        "matching": 2,
+        "total": 4,
+        "observedReproductionRate": 0.5,
+        "requiredMatches": 2,
+        "outcomes": [
+          "TARGET",
+          "PASS",
+          "TARGET",
+          "PASS"
+        ],
+        "accepted": true
+      },
+      {
+        "candidate": "7f7428f684513ae2d7cf4df9b742386a8edc0ac55220e0d8bcacccbce99d9137",
+        "matching": 0,
+        "total": 4,
+        "observedReproductionRate": 0,
+        "requiredMatches": 2,
+        "outcomes": [
+          "OTHER FAILURE",
+          "OTHER FAILURE",
+          "OTHER FAILURE",
+          "OTHER FAILURE"
+        ],
+        "accepted": false
+      }
+    ],
+    "final": {
+      "matching": 2,
+      "total": 4,
+      "observedReproductionRate": 0.5,
+      "requiredMatches": 2,
+      "outcomes": [
+        "TARGET",
+        "PASS",
+        "TARGET",
+        "PASS"
+      ]
+    },
+    "priorCandidateBatches": 0,
+    "meaning": "Current-session observed rates, not probability; candidate batches use fresh copies and are never cached."
+  },
+  "files": [
+    2,
+    1
+  ],
+  "runs": 24,
+  "verification": {
+    "success": true,
+    "integrity": "pass",
+    "install": "not-required",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1,
+    "repetitionEvidence": {
+      "matching": 2,
+      "total": 4,
+      "observedReproductionRate": 0.5,
+      "requiredMatches": 2,
+      "outcomes": [
+        "TARGET",
+        "PASS",
+        "TARGET",
+        "PASS"
+      ]
+    }
+  }
+}

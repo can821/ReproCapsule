@@ -1,3 +1,4 @@
+import { repetitionPolicy, repeatEvaluation } from './repetition.js';
 import { readFile, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { createWorkspace, inventory } from './workspace.js';
@@ -14,25 +15,31 @@ export async function verifyCapsule({ capsule, npmPath, timeoutMs = 10_000, inst
     if (JSON.stringify([...workspace.files].sort()) !== JSON.stringify([...payload, 'capsule.json'].sort())) {
       throw new ReproError('INTEGRITY_FAILED', 'Capsule contains unrecorded or excluded payload files.');
     }
-    const cwd = await workspace.materialize(workspace.files);
-    // Recheck the copied bytes before executing any command.
-    const hashes = await fileHashes(cwd, payload);
-    if (Object.entries(hashes).some(([file, hash]) => hash !== manifest.fileHashes[file])) throw new ReproError('INTEGRITY_FAILED', 'Capsule changed while copying.');
-    const manager = await detectPackageManager(cwd, workspace.files);
-    const needsInstall = manager.needsInstall || manifest.dependencies?.installationPerformed === true;
-    if (needsInstall && manager.kind !== 'npm') throw new ReproError('INVALID_CAPSULE', 'Install metadata does not match the project.');
-    let install = 'not-required';
-    const npm = suppliedNpm ?? (needsInstall || commandUsesNpm(manifest.command) ? await discoverNpm({ npmPath, cwd }) : null);
-    const env = npm ? await npmEnvironment(npm, workspace.root) : {};
-    if (needsInstall) {
-      await npmInstall({ cwd, npm, timeoutMs: installTimeoutMs, allowInstallScripts, offline });
-      install = 'pass';
+    const policy=manifest.reproductionPolicy ? repetitionPolicy(manifest.reproductionPolicy.runs,manifest.reproductionPolicy.threshold) : null;
+    let install='not-required';
+    async function execute() {
+      const cwd=await workspace.materialize(workspace.files);
+      const hashes=await fileHashes(cwd,payload);
+      if(Object.entries(hashes).some(([file,hash])=>hash!==manifest.fileHashes[file]))throw new ReproError('INTEGRITY_FAILED','Capsule changed while copying.');
+      const manager=await detectPackageManager(cwd,workspace.files);
+      const needsInstall=manager.needsInstall||manifest.dependencies?.installationPerformed===true;
+      if(needsInstall&&manager.kind!=='npm')throw new ReproError('INVALID_CAPSULE','Install metadata does not match the project.');
+      const npm=suppliedNpm??(needsInstall||commandUsesNpm(manifest.command)?await discoverNpm({npmPath,cwd}):null);
+      const env=npm?await npmEnvironment(npm,workspace.root):{};
+      if(needsInstall){await npmInstall({cwd,npm,timeoutMs:installTimeoutMs,allowInstallScripts,offline});install='pass';}
+      return {result:await runCommand({cwd,command:manifest.command,timeoutMs,env}),cwd};
     }
-    const result = await runCommand({ cwd, command: manifest.command, timeoutMs, env });
-    if (!matchesPredicate(predicate, manifest.failureSignature, result, cwd)) {
-      throw new ReproError('CAPSULE_VERIFICATION_FAILED', 'CAPSULE INVALID: fresh-copy reproduction differs from the accepted failure.');
+    const matches=observed=>matchesPredicate(predicate,manifest.failureSignature,observed.result,observed.cwd);
+    let result,repetitionEvidence=null;
+    if(policy){
+      const repeated=await repeatEvaluation(execute,matches,policy);
+      if(!repeated.matches)throw new ReproError('CAPSULE_VERIFICATION_FAILED','Fresh repeated verification did not meet the recorded target threshold.');
+      result=repeated.representative.result;repetitionEvidence=repeated.evidence;
+    } else {
+      const observed=await execute();result=observed.result;
+      if(!matches(observed))throw new ReproError('CAPSULE_VERIFICATION_FAILED','CAPSULE INVALID: fresh-copy reproduction differs from the accepted failure.');
     }
-    return { success: true, integrity: 'pass', install, failure: 'pass', verified: true, exitCode: result.exitCode };
+    return {success:true,integrity:'pass',install,failure:'pass',verified:true,exitCode:result.exitCode,...(policy?{repetitionEvidence}: {})};
   } finally { await workspace.cleanup(); }
 }
 
@@ -51,6 +58,10 @@ export async function inspectCapsule(capsule) {
   if (predicate?.type === 'stderr-contains') createPredicate({ matchStderr: predicate.text, exitCode: predicate.exitCode });
   else if (predicate?.type === 'composite') createPredicate({matcher:predicate.matcher});
   else if (predicate?.type !== 'strict') throw new ReproError('INVALID_CAPSULE', 'Unsupported failure predicate.');
+  if(manifest.reproductionPolicy){
+    const policy=repetitionPolicy(manifest.reproductionPolicy.runs,manifest.reproductionPolicy.threshold);
+    if(!policy || manifest.reproductionPolicy.mode!=='repeated' || manifest.reproductionPolicy.minMatches!==policy.minMatches || predicate.type==='strict')throw new ReproError('INVALID_CAPSULE','Invalid repeated verification policy.');
+  }
   const payload = [...manifest.retainedFiles, ...manifest.generatedFiles.filter((file) => file !== 'capsule.json')];
   if (payload.some((file) => typeof file !== 'string') || new Set(payload).size !== payload.length || payload.includes('capsule.json') ||
       JSON.stringify(Object.keys(manifest.fileHashes).sort()) !== JSON.stringify([...payload].sort())) {

@@ -48,7 +48,7 @@ export async function packCapsule({capsule,output}) {
 export async function inspectArchive(file) {
  const archive=await loadArchive(file);
  const manifest=JSON.parse(Buffer.from(archive.files.find(f=>f.path==='capsule.json').data,'base64'));
- return {format:archive.format,version:archive.version,integrity:'PASS',files:archive.files.map(f=>({path:f.path,bytes:Buffer.from(f.data,'base64').length})),runtime:manifest.environment,command:manifest.command,failurePredicate:manifest.failurePredicate,meaning:'Archive integrity checked; commands have not been executed.'};
+ return {format:archive.format,version:archive.version,integrity:'PASS',files:archive.files.map(f=>({path:f.path,bytes:Buffer.from(f.data,'base64').length})),runtime:manifest.environment,command:manifest.command,failurePredicate:manifest.failurePredicate,reproductionPolicy:manifest.reproductionPolicy ?? null,meaning:'Archive integrity checked; commands have not been executed.'};
 }
 export async function unpackCapsule({archive,output}) {
  const envelope=await loadArchive(archive),destination=await validateOutput(path.resolve(archive),output);

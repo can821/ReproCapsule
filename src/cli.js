@@ -34,6 +34,7 @@ Options:
   --npm-path PATH                     Existing npm executable or npm-cli.js
   --allow-install-scripts              Explicit opt-in; default ignores scripts
   --offline                           npm offline mode (local fixture packages)
+  --repeat-runs N --match-threshold R  Opt-in repeated candidate acceptance; explicit matcher required
   --baseline-runs N                   Clean baseline repetitions, 2–100 (2)
   --matcher FILE                     JSON ALL/ANY conditions for exitCode/stdout/stderr/exception/stack
   --match-stderr TEXT [--exit-code N]   Explicit broader failure predicate
@@ -67,7 +68,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule', 'matcher', 'runs', 'dependency', 'versions', 'max-experiments'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule', 'matcher', 'runs', 'dependency', 'versions', 'max-experiments', 'repeat-runs', 'match-threshold'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality', 'converge', 'reduce-source-all']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -135,7 +136,7 @@ export async function main(args = process.argv.slice(2)) {
   const restored = resuming ? await resumeOptions(positionals[1], { allowInstallScripts: common.allowInstallScripts }) : {};
   const result = await buildCapsule({
     repo: values.repo ? path.resolve(values.repo) : undefined, command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
-    baselineRuns: positive('baseline-runs', 2), matcher, matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
+    baselineRuns: positive('baseline-runs', 2), repeatRuns:positive('repeat-runs',undefined), matchThreshold:values['match-threshold']===undefined?undefined:Number(values['match-threshold']), matcher, matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
     maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint, audit: values['audit-minimality'] ?? false, cacheDir: values['cache-dir'], reduceInput: values['reduce-input'], inputMaxRuns: positive('input-max-runs', 200), reduceSource: values['reduce-source'], reduceSourceAll:values['reduce-source-all'] ?? false, sourceParser: values['source-parser'], sourceMaxRuns: positive('source-max-runs', 100), converge:values.converge ?? false, maxRounds:positive('max-rounds',5),
     ...restored,
     inputMaxRuns: positive('input-max-runs', restored.inputMaxRuns ?? 200),
@@ -155,7 +156,7 @@ export async function main(args = process.argv.slice(2)) {
   const summary = { success: true, capsule: result.output, verified: result.verification.verified, complete: counts.complete,
     files: { before: counts.originalFileCount, after: counts.finalFileCount }, dependencies: { before: deps.originalCount, after: deps.finalCount },
     runs: counts.reproductionAttempts, cacheHits: counts.cacheHits, cacheMisses: counts.cacheMisses, persistentCacheHits: counts.persistentCacheHits, elapsedMs: result.elapsedMs,
-    convergence:result.manifest.convergence, domainAudit:result.manifest.domainAudit, workspaces: result.manifest.workspaces, diagnostics: result.manifest.diagnostics, inputReduction: result.manifest.inputReduction, sourceReduction: result.manifest.sourceReduction, minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
+    convergence:result.manifest.convergence, domainAudit:result.manifest.domainAudit, workspaces: result.manifest.workspaces, diagnostics: result.manifest.diagnostics, inputReduction: result.manifest.inputReduction, sourceReduction: result.manifest.sourceReduction, repetitionEvidence:result.manifest.repetitionEvidence, minimality: result.manifest.minimality, terminationReason: counts.terminationReason, failureDigest: result.manifest.failureSignature.digest };
   if (values.json) console.log(JSON.stringify(summary));
   else console.log(`Failure preserved\nProject files: ${counts.originalFileCount} -> ${counts.finalFileCount} (${counts.reductionPercentage}% reduction)\nDependencies: ${deps.originalCount} -> ${deps.finalCount}\nRuns: ${counts.reproductionAttempts}; cache hits: ${counts.cacheHits}; elapsed: ${result.elapsedMs} ms\n${counts.complete ? 'CAPSULE VERIFIED' : 'PARTIAL CAPSULE VERIFIED: ' + counts.terminationReason}\nCapsule created at ${result.output}`);
   if (!values.json && result.manifest.workspaces.originalCount) console.log(`Workspaces: ${result.manifest.workspaces.originalCount} -> ${result.manifest.workspaces.finalCount}`);

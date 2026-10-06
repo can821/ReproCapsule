@@ -1,6 +1,7 @@
 import { mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { repetitionPolicy, repeatEvaluation } from './repetition.js';
 import { performance } from 'node:perf_hooks';
 import { runCommand } from './runner.js';
 import { failureSignature } from './failure-signature.js';
@@ -28,11 +29,15 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, matcher, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200, reduceSource, reduceSourceAll = false, sourceParser, sourceMaxRuns = 100, converge = false, maxRounds = 5 }) {
+  baselineRuns = 2, repeatRuns, matchThreshold, matchStderr, exitCode, matcher, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200, reduceSource, reduceSourceAll = false, sourceParser, sourceMaxRuns = 100, converge = false, maxRounds = 5 }) {
   if (typeof converge !== 'boolean' || !Number.isSafeInteger(maxRounds) || maxRounds < 1 || maxRounds > 100) throw new ReproError('INVALID_ARGUMENTS', 'maxRounds must be 1–100.');
   const started = performance.now();
-  const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
+  const repetition = repetitionPolicy(repeatRuns,matchThreshold);
+  const verificationRuns = repetition?.runs ?? 1;
+  const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns:repetition?.runs ?? baselineRuns, finalRuns:2*verificationRuns });
   const predicate = createPredicate({ matchStderr, exitCode, matcher });
+  if (repetition && (predicate.type === 'strict' || audit || cacheDir)) throw new ReproError('INVALID_ARGUMENTS','Repeated reduction requires an explicit target matcher; deterministic audit and candidate cache must be disabled.');
+  const repetitionEvidence = repetition ? {baseline:null,candidates:[],final:null,priorCandidateBatches:resumeState?.state.repetition?.candidates?.length ?? 0,meaning:'Current-session observed rates, not probability; candidate batches use fresh copies and are never cached.'} : null;
   const destination = await validateOutput(repo, output);
   const checkpointFile = checkpoint ? await checkpointPath(repo, checkpoint, destination, Boolean(resumeState)) : null;
   const cacheDirectory = cacheDir ? path.dirname(await checkpointPath(repo, path.join(cacheDir, '.location-check'), destination, true)) : null;
@@ -123,13 +128,21 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (reduction && result.timedOut && budget.reason() === 'max-time') throw budget.exhausted('max-time');
       return { result, signature: failureSignature(result, { roots: [cwd] }), cwd };
     }
-    const first = await observe(retained, retainedDependencies);
+    const batch = async (files,ids,reduction=false,inputText=input?.content,sourceText=sourceInput?.content) => repeatEvaluation(
+      ()=>observe(files,ids,reduction,inputText,sourceText),
+      observed=>matchesPredicate(predicate,null,observed.result,observed.cwd)&&!infrastructureFailure(observed.result),repetition);
+    let first;
+    if(repetition){
+      const baseline=await batch(retained,retainedDependencies);
+      if(!baseline.matches)throw new ReproError('INVALID_BASELINE','Repeated baseline did not meet its target threshold.');
+      first=baseline.representative;repetitionEvidence.baseline=baseline.evidence;
+    } else first=await observe(retained, retainedDependencies);
     if (!first.signature || infrastructureFailure(first.result) || !matchesPredicate(predicate, first.signature, first.result, first.cwd)) {
       const reason = first.result.timedOut ? 'command timed out' : first.result.outputExceeded ? 'output limit exceeded' : first.result.exitCode === 0 ? 'command succeeded' : infrastructureFailure(first.result) ? 'missing module, command or package setup' : 'no matching normal failure';
       throw new ReproError('INVALID_BASELINE', `Cannot establish a safe baseline: ${reason}.`);
     }
     if (resumeState && !matchesPredicate(predicate, resumeState.acceptedFailure, first.result, first.cwd)) throw new ReproError('CHECKPOINT_FAILURE_CHANGED', 'REFUSE RESUME: retained state no longer matches its accepted failure.');
-    for (let run = 1; run < baselineRuns; run++) {
+    for (let run = 1; !repetition && run < baselineRuns; run++) {
       const observed = await observe(retained, retainedDependencies);
       if (!matchesPredicate(predicate, first.signature, observed.result, observed.cwd)) {
         throw new ReproError('UNSTABLE_BASELINE', 'NON-DETERMINISTIC BASELINE: clean runs disagree under the selected failure predicate.');
@@ -142,8 +155,8 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (!checkpointFile) return;
       await writeCheckpoint(checkpointFile, {
         schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
-        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, matcher, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns, reduceSource, reduceSourceAll, sourceParser, sourceMaxRuns, converge, maxRounds },
-        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase, input: input?.state, sourceInput: sourceInput?.state, convergence },
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, repeatRuns, matchThreshold, matchStderr, exitCode, matcher, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns, reduceSource, reduceSourceAll, sourceParser, sourceMaxRuns, converge, maxRounds },
+        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase, input: input?.state, sourceInput: sourceInput?.state, convergence, repetition:repetitionEvidence },
         counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
           candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },
         budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null },
@@ -151,9 +164,19 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       });
     }
     await persist();
-    onProgress({ phase: 'baseline', candidates: candidates.length, baselineRuns, predicate: predicate.type });
+    onProgress({ phase: 'baseline', candidates: candidates.length, baselineRuns:repetition?.runs ?? baselineRuns, predicate: predicate.type });
     const candidateKey = (files, ids, inputText = input?.content, sourceText = sourceInput?.content) => JSON.stringify([[...files].sort(), [...ids].sort(), command, predicate, inputText === undefined ? null : snapshotId(inputText), sourceText === undefined ? null : snapshotId(sourceText)]);
     async function evaluate(files, ids, fresh = false, inputText = input?.content, sourceText = sourceInput?.content) {
+      if(repetition){
+        try {
+          const observed=await batch(files,ids,true,inputText,sourceText);
+          repetitionEvidence.candidates.push({candidate:snapshotId(candidateKey(files,ids,inputText,sourceText)),...observed.evidence,accepted:observed.matches});
+          return {matches:observed.matches,conclusive:observed.conclusive,reason:observed.matches?'failure-preserved':'failure-changed'};
+        } catch(error){
+          if(['INSTALL_FAILED','INVALID_LOCKFILE','INSTALL_TIMEOUT','INSTALL_OUTPUT_LIMIT'].includes(error.code))return {matches:false,conclusive:false,reason:error.code};
+          throw error;
+        }
+      }
       const key = candidateKey(files, ids, inputText, sourceText);
       if (!fresh && cache.has(key)) { cacheHits++; return cache.get(key); }
       if (!fresh) {
@@ -265,7 +288,12 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     const explanations = retainedExplanations({ files: retained, dependencies: retainedDependencies,
       control: retained.filter(isControlFile), protectedFiles: fixed, peerNames: Object.keys(manager.pkg?.peerDependencies ?? {}),
       lookup: (files, ids) => cache.get(candidateKey(files, ids)), auditEvidence: auditResult.evidence });
-    const final = await observe(retained, retainedDependencies);
+    let final;
+    if(repetition){
+      const checked=await batch(retained,retainedDependencies);
+      if(!checked.matches)throw new ReproError('FINAL_VERIFICATION_FAILED','Repeated final state no longer meets the threshold.');
+      final=checked.representative;repetitionEvidence.final=checked.evidence;
+    } else final=await observe(retained,retainedDependencies);
     if (!matchesPredicate(predicate, first.signature, final.result, final.cwd)) {
       throw new ReproError('FINAL_VERIFICATION_FAILED', 'The reduced file set did not reproduce reliably.');
     }
@@ -274,7 +302,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     workspaceMetrics.retained = workspaces.filter(w => retained.includes(`${w.path}/package.json`)).map(w => ({path:w.path,name:w.name}));
     const manifest = {
       schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
-      failurePredicate: predicate,
+      failurePredicate: predicate, reproductionPolicy:repetition, repetitionEvidence,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
       sourceSnapshotId, convergence: {...convergence, roundStart:undefined, scope:'No-change round over enabled reductions; no global minimality claim'},
       domainAudit: {files:domainAuditStatus('file:',retained.filter(file => !fixed.includes(file)).length), dependencies:domainAuditStatus('dependency:',retainedDependencies.length,Boolean(npm)), workspaces:'NOT AUDITED', input:'NOT AUDITED', source:'NOT AUDITED'}, workspaces: workspaceMetrics, diagnostics: await localiseWithSourceMaps(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, sourceReduction: sourceMetrics, explanations, minimality: auditResult.metadata,
@@ -284,13 +312,13 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
         originalFileCount: workspace.files.length, finalFileCount: retained.length,
         originalCandidateCount: candidates.length, finalCandidateCount: retained.filter((file) => !protectedFiles.includes(file)).length,
         reductionPercentage: Number(((workspace.files.length - retained.length) / Math.max(1, workspace.files.length) * 100).toFixed(2)),
-        candidateAttempts: attempts, acceptedReductions: accepted, reproductionAttempts: budget.runs + 1,
-        cacheHits, cacheMisses, persistentCacheHits, installCount: installCount + (npm ? 1 : 0), baselineRuns,
+        candidateAttempts: attempts, acceptedReductions: accepted, reproductionAttempts: budget.runs + verificationRuns,
+        cacheHits, cacheMisses, persistentCacheHits, installCount: installCount + (npm ? verificationRuns : 0), baselineRuns:repetition?.runs ?? baselineRuns,
         durationBeforePackageVerificationMs: Math.round(performance.now() - started), terminationReason,
         complete: terminationReason === 'complete',
         guarantee: terminationReason === 'complete' ? (auditResult.metadata.status === 'PASS' ? '1-minimal with respect to the audited candidate set; no global minimum claim' : 'reduction complete; 1-minimality not certified without a passing audit') : 'PARTIAL: best verified state; no minimality claim',
       },
-      budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null, finalVerificationReservedRuns: 2 },
+      budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null, finalVerificationReservedRuns: 2*verificationRuns },
       retainedFiles: retained, protectedFiles, userProtectedPaths: keep, exclusions: workspace.exclusions,
       dependencies: { status: npm ? 'reduced' : 'not-required', installationPerformed: Boolean(npm), originalCount: originalDependencies.length, finalCount: retainedDependencies.length,
         retained: retainedDependencies, original: originalDependencies, attempts: dependencyAttempts, acceptedReductions: dependencyAccepted,
@@ -306,14 +334,14 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     const readmeName = retained.includes('README.md') ? 'README.reprocapsule.md' : 'README.md';
     manifest.generatedFiles = ['capsule.json', readmeName, 'reproduce.sh'];
     const installInstruction = npm ? `First run npm ci${allowInstallScripts ? '' : ' --ignore-scripts'} (scripts ${allowInstallScripts ? 'explicitly enabled' : 'disabled'}).\n` : '';
-    await writeFile(path.join(destination, readmeName), `# Reproduction capsule\n\n${terminationReason === 'complete' ? 'Reduction completed.' : 'PARTIAL reduction: ' + terminationReason}\n\n${installInstruction}Then run sh ./reproduce.sh from this directory.\nExpected failing exit code: ${signature.exitCode}.\nFailure predicate: ${predicate.type}${predicate.type === 'strict' ? '' : ' (explicit user choice; broader than transcript equality)'}.\n\nUse reprocapsule verify PATH for independent fresh-copy verification.\nCommands are trusted local input, NOT sandboxed. Review before executing.\nNo node_modules are shipped. Environment values and raw command output are not recorded.\n`);
+    await writeFile(path.join(destination, readmeName), `# Reproduction capsule\n\n${terminationReason === 'complete' ? 'Reduction completed.' : 'PARTIAL reduction: ' + terminationReason}\n\n${installInstruction}Then run sh ./reproduce.sh from this directory.\nExpected failing exit code: ${signature.exitCode}.${repetition ? ` Repeated verification requires ${repetition.minMatches}/${repetition.runs} matching observations; a single run may pass.` : ''}\nFailure predicate: ${predicate.type}${predicate.type === 'strict' ? '' : ' (explicit user choice; broader than transcript equality)'}.\n\nUse reprocapsule verify PATH for independent fresh-copy verification.\nCommands are trusted local input, NOT sandboxed. Review before executing.\nNo node_modules are shipped. Environment values and raw command output are not recorded.\n`);
     await writeFile(path.join(destination, 'reproduce.sh'), `#!/bin/sh\ncd -- "$(dirname -- "$0")" || exit 1\nexec /bin/sh -c ${quote(command)}\n`, { mode: 0o755 });
     manifest.fileHashes = await fileHashes(destination, [...retained, readmeName, 'reproduce.sh']);
     await writeFile(path.join(destination, 'capsule.json'), JSON.stringify(manifest, null, 2) + '\n');
     // Verification copies the finished capsule, installs from scratch, and never
     // trusts the node_modules or process-written files from any reduction attempt.
     const verification = await verifyCapsule({ capsule: destination, npm, npmPath, timeoutMs, installTimeoutMs, allowInstallScripts, offline });
-    budget.runs++;
+    budget.runs+=verificationRuns;
     await persist(terminationReason === 'complete' ? 'complete' : 'partial');
     const elapsedMs = Math.round(performance.now() - started);
     onProgress({ phase: 'complete', output: destination, terminationReason });
