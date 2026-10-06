@@ -1,0 +1,182 @@
+{
+  "formatVersion": 1,
+  "results": [
+    {
+      "id": "multi-file-js",
+      "archiveBytes": 4789,
+      "payloadBytes": 8319,
+      "verified": true,
+      "runtime": {
+        "node": "v24.19.0",
+        "npm": null,
+        "platform": "darwin",
+        "osRelease": "25.6.0",
+        "arch": "arm64"
+      },
+      "command": "node app.cjs",
+      "sourceReduction": {
+        "mode": "multiple",
+        "parser": "TypeScript",
+        "parserVersion": "5.8.3",
+        "eligibleFiles": 2,
+        "filesConsidered": 2,
+        "filesReduced": 2,
+        "originalBytes": 141,
+        "finalBytes": 109,
+        "measuredFiles": 2,
+        "perFile": [
+          {
+            "file": "app.cjs",
+            "parser": "TypeScript",
+            "parserVersion": "5.8.3",
+            "originalBytes": 64,
+            "originalStatements": 3,
+            "originalAstUnits": 3,
+            "finalBytes": 47,
+            "finalStatements": 2,
+            "finalAstUnits": 2,
+            "attempts": 8,
+            "parseRejections": 0,
+            "rejections": {
+              "parse": 0,
+              "nonReducing": 0,
+              "targetChanged": 7
+            },
+            "acceptedReductions": 1,
+            "complete": true,
+            "terminationReason": "complete",
+            "retainedUnits": [
+              {
+                "kind": "FirstStatement",
+                "start": 0,
+                "end": 37,
+                "depth": 0
+              },
+              {
+                "kind": "ExpressionStatement",
+                "start": 55,
+                "end": 63,
+                "depth": 0
+              }
+            ],
+            "scope": "Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command"
+          },
+          {
+            "file": "helper.cjs",
+            "parser": "TypeScript",
+            "parserVersion": "5.8.3",
+            "originalBytes": 77,
+            "originalStatements": 1,
+            "originalAstUnits": 3,
+            "finalBytes": 62,
+            "finalStatements": 1,
+            "finalAstUnits": 2,
+            "attempts": 5,
+            "parseRejections": 0,
+            "rejections": {
+              "parse": 0,
+              "nonReducing": 0,
+              "targetChanged": 4
+            },
+            "acceptedReductions": 1,
+            "complete": true,
+            "terminationReason": "complete",
+            "retainedUnits": [
+              {
+                "kind": "ExpressionStatement",
+                "start": 0,
+                "end": 76,
+                "depth": 0
+              },
+              {
+                "kind": "ThrowStatement",
+                "start": 40,
+                "end": 73,
+                "depth": 1
+              }
+            ],
+            "scope": "Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command"
+          }
+        ],
+        "skipped": [],
+        "attempts": 13,
+        "acceptedReductions": 2,
+        "currentPass": {
+          "attempts": 4,
+          "acceptedReductions": 0
+        },
+        "complete": true,
+        "terminationReason": "complete",
+        "scope": "Deterministic sequential reduction of retained JS/TS files; declaration files excluded; byte totals cover measured files only; no global minimality"
+      },
+      "convergence": {
+        "enabled": true,
+        "rounds": [
+          {
+            "round": 1,
+            "changed": true,
+            "files": 2,
+            "dependencies": 0,
+            "inputBytes": null,
+            "sourceBytes": 109,
+            "runs": 12
+          },
+          {
+            "round": 2,
+            "changed": false,
+            "files": 2,
+            "dependencies": 0,
+            "inputBytes": null,
+            "sourceBytes": 109,
+            "runs": 16
+          }
+        ],
+        "round": 2,
+        "stable": true,
+        "scope": "No-change round over enabled reductions; no global minimality claim"
+      }
+    },
+    {
+      "id": "zod-default-generic",
+      "archiveBytes": 4289652,
+      "payloadBytes": 4316745,
+      "verified": true,
+      "runtime": {
+        "node": "v24.19.0",
+        "npm": "10.9.2",
+        "platform": "darwin",
+        "osRelease": "25.6.0",
+        "arch": "arm64"
+      },
+      "command": "node node_modules/typescript/bin/tsc -p tsconfig.json"
+    },
+    {
+      "id": "markdown-it-tabs",
+      "archiveBytes": 159734,
+      "payloadBytes": 272925,
+      "verified": true,
+      "runtime": {
+        "node": "v24.19.0",
+        "npm": "10.9.2",
+        "platform": "darwin",
+        "osRelease": "25.6.0",
+        "arch": "arm64"
+      },
+      "command": "node probe.cjs"
+    },
+    {
+      "id": "object-inspect",
+      "archiveBytes": 7963,
+      "payloadBytes": 15251,
+      "verified": true,
+      "runtime": {
+        "node": "v24.19.0",
+        "npm": null,
+        "platform": "darwin",
+        "osRelease": "25.6.0",
+        "arch": "arm64"
+      },
+      "command": "node probe.cjs"
+    }
+  ]
+}
