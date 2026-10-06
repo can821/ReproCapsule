@@ -51,8 +51,14 @@
       "historicalEvidence": "corpus/functional/comparison.json; known object-inspect fix file index.js is executed by both versions, not uniquely localized"
     },
     "5": {
-      "status": "PARTIAL",
-      "scope": "Strict transcripts or opt-in stderr substring; repeat baseline detects instability"
+      "status": "COMPLETED",
+      "scope": "Conservative strict default; explicit ALL/ANY trees over exit code, stdout/stderr text, exception and stack lines. Bounded fresh-run observe command for intermittent evidence; reduction itself still requires stable baselines. No signal/regex matcher.",
+      "testsPassed": 16,
+      "controlledIntermittent": {
+        "runs": 6,
+        "target": 3,
+        "observedReproductionRate": 0.5
+      }
     },
     "6": {
       "status": "PARTIAL",

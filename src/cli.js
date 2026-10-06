@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { observeReproduction } from './observe.js';
 import { compareExecutions } from './compare.js';
 import { parseArgs } from 'node:util';
 import { buildCapsule } from './capsule.js';
@@ -12,6 +14,7 @@ import { ReproError } from './errors.js';
 const help = `ReproCapsule — reduce and independently verify failing npm projects
 
   reprocapsule reduce --repo PATH --command 'node test/repro.js' --out PATH
+  reprocapsule observe --repo PATH --command COMMAND --matcher FILE [--runs N]
   reprocapsule compare --repo PATH --command FAIL --passing-command PASS [--passing-repo PATH]
   reprocapsule bisect --repo PATH --good REF --bad REF --command COMMAND
   reprocapsule verify-fix CAPSULE --patch FILE [--test-command COMMAND]
@@ -26,6 +29,7 @@ Options:
   --allow-install-scripts              Explicit opt-in; default ignores scripts
   --offline                           npm offline mode (local fixture packages)
   --baseline-runs N                   Clean baseline repetitions, 2–100 (2)
+  --matcher FILE                     JSON ALL/ANY conditions for exitCode/stdout/stderr/exception/stack
   --match-stderr TEXT [--exit-code N]   Explicit broader failure predicate
   --max-runs N                        Total reproduction budget, including 2 final runs
   --max-time N                        Reduction deadline in seconds; final verification extra
@@ -55,7 +59,7 @@ export function cliExitCode(error) {
   return 1; // Existing CLI input/error exit code is retained for compatibility.
 }
 export async function main(args = process.argv.slice(2)) {
-  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule'];
+  const stringNames = ['repo', 'command', 'out', 'timeout-ms', 'command-timeout', 'install-timeout-ms', 'npm-path', 'baseline-runs', 'match-stderr', 'exit-code', 'max-runs', 'max-time', 'checkpoint', 'cache-dir', 'reduce-input', 'input-max-runs', 'good', 'bad', 'patch', 'test-command', 'format', 'plugin', 'reduce-source', 'source-parser', 'source-max-runs', 'max-rounds', 'passing-repo', 'passing-command', 'capsule', 'matcher', 'runs'];
   const options = Object.fromEntries(stringNames.map((name) => [name, { type: 'string' }]));
   for (const name of ['help', 'json', 'allow-install-scripts', 'offline', 'audit-minimality', 'converge']) options[name] = { type: 'boolean' };
   options.keep = { type: 'string', multiple: true };
@@ -72,6 +76,11 @@ export async function main(args = process.argv.slice(2)) {
     installTimeoutMs: positive('install-timeout-ms', 60_000),
     npmPath: values['npm-path'], allowInstallScripts: values['allow-install-scripts'] ?? false, offline: values.offline ?? false,
   };
+  const matcher = values.matcher ? JSON.parse(await readFile(values.matcher,'utf8')) : undefined;
+  if (positionals[0] === 'observe' && positionals.length === 1) {
+    const result = await observeReproduction({repo:values.repo,command:values.command,runs:positive('runs',10),matcher,matchStderr:values['match-stderr'],...common});
+    console.log(JSON.stringify(result)); return result;
+  }
   if (positionals[0] === 'compare' && positionals.length === 1) {
     const result = await compareExecutions({repo:values.repo,passingRepo:values['passing-repo'],command:values.command,passingCommand:values['passing-command'],capsule:values.capsule,...common});
     console.log(JSON.stringify(result)); return result;
@@ -109,7 +118,7 @@ export async function main(args = process.argv.slice(2)) {
   const restored = resuming ? await resumeOptions(positionals[1], { allowInstallScripts: common.allowInstallScripts }) : {};
   const result = await buildCapsule({
     repo: values.repo ? path.resolve(values.repo) : undefined, command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
-    baselineRuns: positive('baseline-runs', 2), matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
+    baselineRuns: positive('baseline-runs', 2), matcher, matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
     maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint, audit: values['audit-minimality'] ?? false, cacheDir: values['cache-dir'], reduceInput: values['reduce-input'], inputMaxRuns: positive('input-max-runs', 200), reduceSource: values['reduce-source'], sourceParser: values['source-parser'], sourceMaxRuns: positive('source-max-runs', 100), converge:values.converge ?? false, maxRounds:positive('max-rounds',5),
     ...restored,
     inputMaxRuns: positive('input-max-runs', restored.inputMaxRuns ?? 200),

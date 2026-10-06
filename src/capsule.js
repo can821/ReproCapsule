@@ -28,11 +28,11 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200, reduceSource, sourceParser, sourceMaxRuns = 100, converge = false, maxRounds = 5 }) {
+  baselineRuns = 2, matchStderr, exitCode, matcher, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200, reduceSource, sourceParser, sourceMaxRuns = 100, converge = false, maxRounds = 5 }) {
   if (typeof converge !== 'boolean' || !Number.isSafeInteger(maxRounds) || maxRounds < 1 || maxRounds > 100) throw new ReproError('INVALID_ARGUMENTS', 'maxRounds must be 1–100.');
   const started = performance.now();
   const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
-  const predicate = createPredicate({ matchStderr, exitCode });
+  const predicate = createPredicate({ matchStderr, exitCode, matcher });
   const destination = await validateOutput(repo, output);
   const checkpointFile = checkpoint ? await checkpointPath(repo, checkpoint, destination, Boolean(resumeState)) : null;
   const cacheDirectory = cacheDir ? path.dirname(await checkpointPath(repo, path.join(cacheDir, '.location-check'), destination, true)) : null;
@@ -141,7 +141,7 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (!checkpointFile) return;
       await writeCheckpoint(checkpointFile, {
         schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
-        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns, reduceSource, sourceParser, sourceMaxRuns, converge, maxRounds },
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, matcher, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns, reduceSource, sourceParser, sourceMaxRuns, converge, maxRounds },
         acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase, input: input?.state, sourceInput: sourceInput?.state, convergence },
         counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
           candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },

@@ -49,6 +49,7 @@ export async function inspectCapsule(capsule) {
   }
   const predicate = manifest.failurePredicate;
   if (predicate?.type === 'stderr-contains') createPredicate({ matchStderr: predicate.text, exitCode: predicate.exitCode });
+  else if (predicate?.type === 'composite') createPredicate({matcher:predicate.matcher});
   else if (predicate?.type !== 'strict') throw new ReproError('INVALID_CAPSULE', 'Unsupported failure predicate.');
   const payload = [...manifest.retainedFiles, ...manifest.generatedFiles.filter((file) => file !== 'capsule.json')];
   if (payload.some((file) => typeof file !== 'string') || new Set(payload).size !== payload.length || payload.includes('capsule.json') ||

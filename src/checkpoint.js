@@ -71,7 +71,7 @@ export async function resumeOptions(file, { allowInstallScripts = false } = {}) 
   // Only explicitly supported configuration fields are restored.
   const c = checkpoint.config;
   return { repo: checkpoint.source, command: c.command, timeoutMs: c.timeoutMs, installTimeoutMs: c.installTimeoutMs,
-    baselineRuns: c.baselineRuns, matchStderr: c.matchStderr, exitCode: c.exitCode, keep: c.keep, audit: c.audit ?? false, cacheDir: c.cacheDir, reduceInput: c.reduceInput, inputMaxRuns: c.inputMaxRuns ?? 200, reduceSource: c.reduceSource, sourceParser: c.sourceParser, sourceMaxRuns: c.sourceMaxRuns ?? 100, converge:c.converge ?? false, maxRounds:c.maxRounds ?? 5,
+    baselineRuns: c.baselineRuns, matchStderr: c.matchStderr, exitCode: c.exitCode, matcher:c.matcher, keep: c.keep, audit: c.audit ?? false, cacheDir: c.cacheDir, reduceInput: c.reduceInput, inputMaxRuns: c.inputMaxRuns ?? 200, reduceSource: c.reduceSource, sourceParser: c.sourceParser, sourceMaxRuns: c.sourceMaxRuns ?? 100, converge:c.converge ?? false, maxRounds:c.maxRounds ?? 5,
     allowInstallScripts: c.allowInstallScripts, offline: c.offline,
     checkpoint: file, resumeState: checkpoint };
 }
