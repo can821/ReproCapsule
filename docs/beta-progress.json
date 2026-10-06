@@ -43,5 +43,11 @@
     },
     "historical": "corpus/functional/multi-source.json: first production file 19000 -> 1968 bytes; 250 source evaluations; verified partial, later files not reached",
     "limits": "256 eligible retained files; declaration files excluded; 1 MiB per file; source budget shared sequentially, so an early file can consume it. Byte totals explicitly cover measured files."
+  },
+  "differentialEvidence": {
+    "status": "COMPLETED",
+    "focusedTestsPassed": 5,
+    "scope": "V8 innermost executed ranges represented as intersecting nonblank source lines; TS line-start source-map origins. Only identical source hashes are aligned.",
+    "historical": "corpus/functional/region-comparison.json; executed regions overlap known quote escaping fix area in both versions, not proof of causality."
   }
 }

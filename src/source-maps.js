@@ -78,3 +78,17 @@ export async function localiseWithSourceMaps(result, cwd, retainedFiles, explana
   }
   return diagnostics;
 }
+
+// Map line starts only; this does not imply expression-accurate TS coverage.
+export async function mapExecutedLines(root, generated, lines, retainedFiles) {
+  const allowed=new Set(retainedFiles),relative=path.relative(root,generated).split(path.sep).join('/');
+  if(allowed.has(relative))return lines.map(line=>({file:relative,line,mapped:false}));
+  const map=await loadMap(root,generated).catch(()=>null),result=[];
+  if(!map)return result;
+  for(const line of lines){
+    const origin=map.findOrigin(line,1);if(!origin?.fileName)continue;
+    const file=path.relative(root,origin.fileName).split(path.sep).join('/');
+    if(allowed.has(file)&&inside(root,await realpath(origin.fileName).catch(()=>'')))result.push({file,line:origin.lineNumber,mapped:true});
+  }
+  return result;
+}
