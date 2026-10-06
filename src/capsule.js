@@ -28,7 +28,8 @@ const under = (file, dir) => file === dir || file.startsWith(`${dir}/`);
 
 export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, onProgress = () => {},
   npmPath, installTimeoutMs = 60_000, allowInstallScripts = false, offline = false,
-  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200, reduceSource, sourceParser, sourceMaxRuns = 100 }) {
+  baselineRuns = 2, matchStderr, exitCode, maxRuns = Infinity, maxTimeMs = Infinity, keep = [], checkpoint, resumeState, audit = false, cacheDir, reduceInput, inputMaxRuns = 200, reduceSource, sourceParser, sourceMaxRuns = 100, converge = false, maxRounds = 5 }) {
+  if (typeof converge !== 'boolean' || !Number.isSafeInteger(maxRounds) || maxRounds < 1 || maxRounds > 100) throw new ReproError('INVALID_ARGUMENTS', 'maxRounds must be 1–100.');
   const started = performance.now();
   const budget = new ReductionBudget({ maxRuns, maxTimeMs, baselineRuns });
   const predicate = createPredicate({ matchStderr, exitCode });
@@ -77,6 +78,9 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
           retained.some((file) => !workspace.files.includes(file)) || retainedDependencies.some((id) => !originalDependencies.includes(id)) ||
           protectedFiles.some((file) => !retained.includes(file))) throw new ReproError('INVALID_CHECKPOINT', 'Checkpoint items are inconsistent with the source/protection policy.');
     }
+    const convergence = resumeState?.state.convergence ?? { enabled:converge, rounds:[], round:1, roundStart:null, stable:false };
+    const stateIdentity = () => snapshotId({files:[...retained].sort(),dependencies:[...retainedDependencies].sort(),input:input?.content,source:sourceInput?.content});
+    convergence.roundStart ??= stateIdentity();
     const packageStates = new Map(), cache = new Map();
     let cacheHits = 0, cacheMisses = 0, persistentCacheHits = 0, installCount = 0, attempts = 0, accepted = 0;
     let dependencyAttempts = 0, dependencyAccepted = 0, terminationReason = 'complete';
@@ -137,8 +141,8 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (!checkpointFile) return;
       await writeCheckpoint(checkpointFile, {
         schemaVersion: 1, toolVersion, source: workspace.source, sourceSnapshotId, runtime,
-        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns, reduceSource, sourceParser, sourceMaxRuns },
-        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase, input: input?.state, sourceInput: sourceInput?.state },
+        config: { command, timeoutMs, installTimeoutMs, baselineRuns, matchStderr, exitCode, keep, allowInstallScripts, offline, audit, cacheDir: cacheDirectory, reduceInput, inputMaxRuns, reduceSource, sourceParser, sourceMaxRuns, converge, maxRounds },
+        acceptedFailure, failurePredicate: predicate, state: { files: retained, dependencies: retainedDependencies, phase, input: input?.state, sourceInput: sourceInput?.state, convergence },
         counters: { reproductionAttempts: (resumeState?.counters.reproductionAttempts ?? 0) + budget.runs,
           candidateAttempts: attempts + (progress.attempts ?? 0), acceptedReductions: accepted + (progress.accepted ?? 0) },
         budget: { maxRuns: Number.isFinite(maxRuns) ? maxRuns : null, maxTimeMs: Number.isFinite(maxTimeMs) ? maxTimeMs : null },
@@ -179,6 +183,8 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       attempts += reduction.attempts; accepted += reduction.accepted;
       if (!reduction.complete) terminationReason = reduction.terminationReason;
     }
+    while (true) {
+    if (converge && convergence.round > maxRounds) { terminationReason = 'max-rounds'; break; }
     if (phase === 'workspaces') {
       const active = workspaces.filter(w => retained.includes(`${w.path}/package.json`));
       const fixed = active.filter(w => keep.some(entry => under(w.path,entry) || under(entry,w.path)) || input && under(input.file,w.path) || sourceInput && under(sourceInput.file,w.path)).map(w => w.path);
@@ -232,6 +238,16 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       if (sourceMetrics.complete) phase = 'done'; else terminationReason = sourceMetrics.terminationReason;
       await persist(terminationReason === 'complete' ? 'running' : 'partial');
     }
+    if (!converge || phase !== 'done' || terminationReason !== 'complete') break;
+    const end = stateIdentity();
+    convergence.rounds.push({round:convergence.round,changed:end !== convergence.roundStart,files:retained.length,dependencies:retainedDependencies.length,inputBytes:input ? Buffer.byteLength(input.content) : null,sourceBytes:sourceInput ? Buffer.byteLength(sourceInput.content) : null,runs:budget.runs});
+    if (end === convergence.roundStart) { convergence.stable = true; await persist(); break; }
+    convergence.round++; convergence.roundStart = end;
+    phase = workspaces.length ? 'workspaces' : 'files';
+    if (convergence.round > maxRounds) { terminationReason = 'max-rounds'; await persist('partial'); break; }
+    await persist();
+    if (budget.reason()) { terminationReason = budget.reason(); break; }
+    }
     const localPaths = npm ? localReferences(selectDependencies(manager.pkg, retainedDependencies)) : [];
     const fixed = retained.filter((file) => protectedFiles.includes(file) || localPaths.some((entry) => under(file, entry)));
     const auditStartRuns = budget.runs;
@@ -239,6 +255,11 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       evaluate: (files, ids) => evaluate(files, ids, true), shouldStop: () => budget.reason() }) :
       { metadata: { requested: false, status: 'NOT PROVEN', level: 'not-audited' }, evidence: {} };
     auditResult.metadata.reproductionRuns = budget.runs - auditStartRuns;
+    function domainAuditStatus(prefix, expected, enabled = true) {
+      if (!audit || !enabled) return 'NOT AUDITED';
+      const observations = Object.entries(auditResult.evidence).filter(([id]) => id.startsWith(prefix)).map(([,value]) => value);
+      return observations.length === expected && observations.every(value => value.conclusive && !value.matches) ? 'PASS' : 'PARTIAL';
+    }
     if (auditResult.metadata.terminationReason) terminationReason = auditResult.metadata.terminationReason;
     const explanations = retainedExplanations({ files: retained, dependencies: retainedDependencies,
       control: retained.filter(isControlFile), protectedFiles: fixed, peerNames: Object.keys(manager.pkg?.peerDependencies ?? {}),
@@ -254,7 +275,8 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
       schemaVersion: 1, tool: { name: 'reprocapsule', version: toolVersion }, command,
       failurePredicate: predicate,
       failureSignature: { version: signature.version, strategy: signature.strategy, digest: signature.digest, exitCode: signature.exitCode },
-      sourceSnapshotId, workspaces: workspaceMetrics, diagnostics: await localiseWithSourceMaps(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, sourceReduction: sourceMetrics, explanations, minimality: auditResult.metadata,
+      sourceSnapshotId, convergence: {...convergence, roundStart:undefined, scope:'No-change round over enabled reductions; no global minimality claim'},
+      domainAudit: {files:domainAuditStatus('file:',retained.filter(file => !fixed.includes(file)).length), dependencies:domainAuditStatus('dependency:',retainedDependencies.length,Boolean(npm)), workspaces:'NOT AUDITED', input:'NOT AUDITED', source:'NOT AUDITED'}, workspaces: workspaceMetrics, diagnostics: await localiseWithSourceMaps(final.result, final.cwd, retained, explanations), inputReduction: inputMetrics, sourceReduction: sourceMetrics, explanations, minimality: auditResult.metadata,
       continuation: { resumed: Boolean(resumeState), priorReproductionAttempts: resumeState?.counters.reproductionAttempts ?? 0 },
       environment: { node: process.version, npm: commandNpm?.version ?? null, platform: process.platform, osRelease: os.release(), arch: process.arch },
       reduction: {

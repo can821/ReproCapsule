@@ -39,8 +39,10 @@
       }
     },
     "3": {
-      "status": "NOT STARTED",
-      "scope": "Existing pipeline has one post-dependency file cleanup, no fixpoint coordinator"
+      "status": "COMPLETED",
+      "scope": "Opt-in sequential rounds over enabled domains, hard round/run/time bounds, checkpoint continuation. Independent file/dependency audit status; workspace/input/source explicitly NOT AUDITED.",
+      "focusedTests": 7,
+      "proof": "Source removal makes extra.cjs removable next round; third round unchanged. One-round partial resumes to same 3-round fixpoint."
     },
     "4": {
       "status": "PARTIAL",
