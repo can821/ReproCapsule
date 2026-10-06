@@ -1,0 +1,24 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import path from 'node:path';
+import {temporary} from './helpers.js';
+import {buildCapsule} from '../src/capsule.js';
+import {packCapsule,inspectArchive,unpackCapsule} from '../src/portable.js';
+import {verifyCapsule} from '../src/verify.js';
+import {gzipSync,gunzipSync} from 'node:zlib';
+import {digest} from '../src/integrity.js';
+test('portable pack/inspect/unpack/fresh verify preserves target, refuses corruption and traversal',async t=>{
+ const root=await temporary(t),repo=path.join(root,'source'),storage=path.join(root,'archives');await mkdir(repo);await mkdir(storage);
+ await writeFile(path.join(repo,'app.cjs'),"throw new Error('PORTABLE_TARGET');\n");
+ const capsule=await buildCapsule({repo,command:'node app.cjs',output:path.join(root,'capsule')});
+ const archive=path.join(storage,'proof.rcap.gz');const packed=await packCapsule({capsule:capsule.output,output:archive});assert.ok(packed.archiveBytes>0);
+ assert.equal((await inspectArchive(archive)).integrity,'PASS');
+ const dest=path.join(root,'fresh');await unpackCapsule({archive,output:dest});assert.equal((await verifyCapsule({capsule:dest})).verified,true);
+ await assert.rejects(unpackCapsule({archive,output:dest}),{code:'OUTPUT_EXISTS'});
+ const envelope=JSON.parse(gunzipSync(await readFile(archive)));envelope.files[0].path='../escape';envelope.integrity=digest(JSON.stringify(envelope.files));
+ const bad=path.join(storage,'bad.rcap.gz');await writeFile(bad,gzipSync(JSON.stringify(envelope)));
+ await assert.rejects(unpackCapsule({archive:bad,output:path.join(root,'bad')}),{code:'INVALID_ARCHIVE'});
+ envelope.files[0].path='app.cjs';envelope.files[0].data='dGFtcGVy';await writeFile(bad,gzipSync(JSON.stringify(envelope)));
+ await assert.rejects(inspectArchive(bad),{code:'INVALID_ARCHIVE'});
+});

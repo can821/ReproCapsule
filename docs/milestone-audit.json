@@ -68,8 +68,11 @@
       "originalManifestUnchanged": true
     },
     "7": {
-      "status": "PARTIAL",
-      "scope": "Integrity-checked capsule directory/verify exists; portable archive lifecycle absent"
+      "status": "COMPLETED",
+      "scope": "Versioned gzip JSON archive, SHA-256 integrity, pack/inspect/unpack then existing fresh verify. 32 MiB payload cap, rejects personal paths and local working data. Integrity is not authorship authentication.",
+      "testPassed": 1,
+      "historicalProof": "corpus/functional/portable-roundtrip.json",
+      "archiveBytes": 13184
     },
     "8": {
       "status": "PARTIAL",

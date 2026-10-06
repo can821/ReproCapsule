@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { packCapsule, inspectArchive, unpackCapsule } from './portable.js';
 import { dependencyBoundary } from './experiments.js';
 import { readFile } from 'node:fs/promises';
 import { observeReproduction } from './observe.js';
@@ -21,6 +22,9 @@ const help = `ReproCapsule — reduce and independently verify failing npm proje
   reprocapsule bisect --repo PATH --good REF --bad REF --command COMMAND
   reprocapsule verify-fix CAPSULE --patch FILE [--test-command COMMAND]
   reprocapsule report CAPSULE --out FILE [--format html|markdown] [--plugin PATH]
+  reprocapsule pack CAPSULE --out FILE.rcap.gz
+  reprocapsule inspect FILE.rcap.gz
+  reprocapsule unpack FILE.rcap.gz --out NEW_DIRECTORY
   reprocapsule verify CAPSULE
   reprocapsule resume CHECKPOINT --out NEW_PATH
 
@@ -78,6 +82,11 @@ export async function main(args = process.argv.slice(2)) {
     installTimeoutMs: positive('install-timeout-ms', 60_000),
     npmPath: values['npm-path'], allowInstallScripts: values['allow-install-scripts'] ?? false, offline: values.offline ?? false,
   };
+  if (['pack','inspect','unpack'].includes(positionals[0]) && positionals.length === 2) {
+    if (positionals[0] !== 'inspect' && !values.out) throw new ReproError('INVALID_ARGUMENTS','pack/unpack require --out PATH.');
+    const result = positionals[0] === 'pack' ? await packCapsule({capsule:positionals[1],output:values.out}) : positionals[0] === 'inspect' ? await inspectArchive(positionals[1]) : await unpackCapsule({archive:positionals[1],output:values.out});
+    console.log(JSON.stringify(result)); return result;
+  }
   const matcher = values.matcher ? JSON.parse(await readFile(values.matcher,'utf8')) : undefined;
   if (positionals[0] === 'dependency-boundary' && positionals.length === 1) {
     const result = await dependencyBoundary({repo:values.repo,command:values.command,dependency:values.dependency,values:values.versions?.split(','),matcher,matchStderr:values['match-stderr'],maxExperiments:positive('max-experiments',30),...common});

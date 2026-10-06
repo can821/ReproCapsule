@@ -1,0 +1,21 @@
+{
+  "case": "object-inspect-quotes",
+  "packed": {
+    "format": "reprocapsule-gzip-json",
+    "version": 1,
+    "files": 8,
+    "payloadBytes": 27044,
+    "archiveBytes": 13184
+  },
+  "integrity": "PASS",
+  "verification": {
+    "success": true,
+    "integrity": "pass",
+    "install": "not-required",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "freshTemporaryLocation": true,
+  "runtime": "v24.19.0"
+}
