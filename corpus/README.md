@@ -9,4 +9,4 @@ node scripts/corpus.js work/corpus-source work/corpus-results
 
 Preparation downloads only pinned official-registry archives and rejects links/traversal. Execution is explicit, trusted local code, not sandboxed. The reducer uses isolated copies and protects upstream license files. The authored harness is `node probe.cjs`; no upstream development test suite or network service runs. Completed capsules are independently verified and source hashes/modes rechecked. Choose new paths for each run.
 
-The checked-in result file contains measured evidence, not universal performance claims. Broader application/build-tool compatibility and historical bug cases remain necessary before beta.
+The checked-in result file contains measured evidence, not universal performance claims. These synthetic compatibility probes complement the separate historical-regression corpora; they are not external-user validation or evidence of broad application/build-tool compatibility.

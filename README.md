@@ -2,20 +2,29 @@
 
 ReproCapsule reduces failing Node.js/npm projects into smaller, independently verifiable reproduction capsules while preserving the target failure.
 
-**Status: 0.6.0-beta.1 pre-release preparation.** Five historical functional bugs across four independent projects are verified. Ubuntu and macOS Node 24 core checks and historical validation passed [remote CI for commit 1d5b707](https://github.com/can821/ReproCapsule/actions/runs/37524518426). This version-preparation commit still requires its own CI verification before a GitHub pre-release.
+**30-second example:** a historical Day.js objectSupport regression was reduced from **448 files to 5**, and the reduced capsule reproduced the same strict failure in a fresh copy. That is one measured historical case, not a promised reduction ratio.
+
+**Status:** [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) is a published GitHub pre-release. Its exact release commit `6301a9fe85ba237fba27d84826fb9e5a9c6c880d` passed Ubuntu and macOS Node 24 core checks, historical validation, the real TypeScript proof, and `npm pack --dry-run` in [CI run 37525635007](https://github.com/can821/ReproCapsule/actions/runs/37525635007). The core test job reported **96/96 passing tests on both operating systems**. **External-user validation is not yet established**; broad ecosystem compatibility is therefore not claimed.
 
 ## Quick start
 
-Node 24+, npm 9+, macOS/Linux implementation. Local checks ran on macOS; remote Ubuntu/macOS Node 24 checks passed, including the real compiler and mapped source reduction proof.
+Supported today: Node 24+ and npm-based projects on macOS/Linux. The beta is distributed from GitHub source; it is **not published to npm yet**, and `private: true` prevents accidental publication. Windows, Node 22, yarn and pnpm are not currently declared supported.
 
 ```sh
+git clone https://github.com/can821/ReproCapsule.git
+cd ReproCapsule
 npm ci --ignore-scripts
-node bin/reprocapsule.js reduce --repo ./broken-project --command 'npm test' --out ./capsule
-node bin/reprocapsule.js verify ./capsule
-npm test
+node bin/reprocapsule.js reduce --repo /path/to/broken-project --command 'npm test' --out /tmp/reprocapsule-case
+node bin/reprocapsule.js verify /tmp/reprocapsule-case
 ```
 
-Output must be new and outside the source. npm may be supplied with `--npm-path /path/to/npm-cli.js` or `REPROCAPSULE_NPM`. This tool never installs system software. Package remains private; npm publication has not occurred. Licensed under MIT, Copyright (c) 2026 Can Yilmaz. `private: true` intentionally prevents npm publication.
+Output must be new and outside the source. npm may be supplied with `--npm-path /path/to/npm-cli.js` or `REPROCAPSULE_NPM`. This tool never installs system software. npm publication is deferred while the beta is being validated by external users. Licensed under MIT, Copyright (c) 2026 Can Yilmaz.
+
+## Scope
+
+**Core beta workflow:** reduce a failing project, preserve the target failure, resume interrupted work, verify the resulting capsule, and optionally pack/unpack it for transfer.
+
+**Advanced beta tooling:** Git bisect, passing/failing comparison, patch verification, intermittent-failure observation/reduction, dependency-boundary experiments, runtime comparison and reporter plugins. These provide bounded debugging evidence; they are not root-cause, causality or complete-fix proofs.
 
 ## Working capabilities
 
@@ -62,7 +71,7 @@ Reports inspect integrity without executing the recorded command and do not embe
 
 ## Measured evidence
 
-**95 automated tests passed, 0 failed, 0 skipped** on macOS arm64 / Node 24.19.0 / npm 10.9.2. Single-run timings below are fixture measurements, not universal performance promises.
+The measurements below were recorded locally on macOS arm64 / Node 24.19.0 / npm 10.9.2. They are fixture-specific measurements, not universal performance promises. Release CI status is reported once in the status section above.
 
 | Case | Measured result |
 |---|---|
@@ -76,19 +85,87 @@ Reports inspect integrity without executing the recorded command and do not embe
 
 The TS result rebuilt with real `tsc`, verified independently, and mapped `dist/parser.js:7:25` to `src/parser.ts:2:24`. Strict emitted-stack matching conservatively limited further reductions.
 
-Five independent published production distributions were tested: ms 6→5 files, semver 54→49, fast-json-stable-stringify 20→5, minimist 26→5, JSON5 22→9. These use authored negative-input probes, **not claimed historical upstream bugs or full upstream development suites**. Development manifests were explicitly adapted; production code stayed unchanged. Upstream commit metadata, licenses, integrity hashes, results and limitations are in [corpus/README.md](corpus/README.md). Third-party source is not committed.
+### Compatibility probes: authored negative inputs
+
+Five independent published production distributions were tested with authored negative-input probes: ms 6→5 files, semver 54→49, fast-json-stable-stringify 20→5, minimist 26→5, JSON5 22→9. These are **synthetic compatibility probes, not historical upstream bug reproductions and not full upstream development suites**. Development manifests were explicitly adapted; production code stayed unchanged. Upstream commit metadata, licenses, integrity hashes, results and limitations are in [corpus/README.md](corpus/README.md). Third-party source is not committed.
 
 ## Security and remaining scope
 
-**Not a sandbox.** Commands, selected parser/reporter modules and opted-in lifecycle scripts execute with user permissions, including access to network/external files. Installs occur in copies; lifecycle scripts default OFF. `.git`, `node_modules`, symlinks and known secret filenames are excluded. Filename filtering is not a secret-content scanner. Review command metadata before sharing. Hashes detect corruption, not malicious replacement of both content and metadata. No telemetry, automatic source upload or LLM integration.
+**Not a sandbox.** Commands, selected parser/reporter modules, explicitly selected plugins and opted-in lifecycle scripts execute with user permissions, including access to network/external files. Installs occur in copies; lifecycle scripts default OFF. `.git`, `node_modules`, symlinks and known secret filenames are excluded. Filename filtering is not a secret-content scanner. Do not run untrusted projects, commands or plugins as though ReproCapsule were an isolation boundary. Review command metadata before sharing. Hashes detect corruption, not malicious replacement of both content and metadata. No telemetry, automatic source upload or LLM integration.
 
-No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; only one actual Node version was available locally. Controlled wrappers test the mechanism, not cross-version compatibility. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix. Node 22 is not declared supported. Ubuntu/macOS Node 24 remote CI passed on the linked commit; no npm publication is planned.
+No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; only one actual Node version was available locally. Controlled wrappers test the mechanism, not cross-version compatibility. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix.
 
-## Historical evidence and new workflows
+### Current gaps and next validation targets
 
-[Historical functional cases](corpus/functional/README.md) pin three upstream bugs: Day.js objectSupport null handling (448→5 files), Day.js duration getters (448→5), and object-inspect quote escaping (35→5). Each buggy version fails and the fixed version passes the same upstream-derived probe. Each reduced capsule reproduces the strict failure in a fresh copy. These are adapted published distributions, not full upstream application checkouts.
+- No external-user validation has been completed yet.
+- Windows, Node 22, yarn and pnpm are not currently supported/validated.
+- No Docker/container sandbox is provided; untrusted projects or plugins should not be executed directly.
+- Candidate evaluation is sequential; parallel evaluation is not implemented.
+- There is no apples-to-apples benchmark against other reducers yet.
+- Near-term priority is external-user feedback first, then platform/package-manager expansion or performance work based on observed demand.
 
-Deep source examples: JS 177→107 bytes, 9→5 AST units (strict transcript); TS 187→127 bytes, 8→5 AST units (real tsc build plus explicit target message because emitted stack lines move). Builds must be included in the command. A historical object-inspect source run reduced 19,000→9,239 bytes (350→150 AST units) while preserving the strict failure. It hit the 180-candidate source budget: verified partial reduction, not a source minimum.
+### GitHub Actions usage today
+
+ReproCapsule does not ship a first-party GitHub Action. A workflow can use the source checkout directly:
+
+```yaml
+name: ReproCapsule reproduction
+on: workflow_dispatch
+
+jobs:
+  reduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: project
+      - uses: actions/checkout@v5
+        with:
+          repository: can821/ReproCapsule
+          ref: v0.6.0-beta.1
+          path: reprocapsule
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+        working-directory: reprocapsule
+      - name: Reduce and verify
+        run: |
+          node reprocapsule/bin/reprocapsule.js reduce \
+            --repo project \
+            --command 'npm test' \
+            --out "$RUNNER_TEMP/reprocapsule-case"
+          node reprocapsule/bin/reprocapsule.js verify "$RUNNER_TEMP/reprocapsule-case"
+```
+
+This executes the reproduction command with the GitHub runner's permissions; it is **not** isolation.
+
+## Related work
+
+ReproCapsule does not claim to invent program reduction. It combines existing reduction/debugging ideas with npm-project structure, failure verification, project-level packaging and debugging evidence.
+
+- [Delta Debugging / ddmin](https://www.debuggingbook.org/html/DeltaDebugger.html) is a generic approach for minimizing failure-inducing inputs.
+- [C-Reduce](https://github.com/csmith-project/creduce) is a mature C/C++ test-case reducer driven by an interestingness test.
+- [Perses](https://github.com/uw-pluverse/perses) is a syntax-directed, language-agnostic program reducer and includes JavaScript support.
+- [git bisect](https://git-scm.com/docs/git-bisect) searches history for the change that introduced a property; ReproCapsule's project reduction is complementary rather than a replacement.
+
+No direct performance/minimality comparison against these tools has been completed yet.
+
+## Historical regressions and advanced workflows
+
+The historical cases below are separate from the synthetic compatibility probes above.
+
+| Historical case | Measured file result | Reduction status |
+|---|---:|---|
+| Day.js objectSupport null handling | 448 → 5 | complete; audited candidate set |
+| Day.js duration getters | 448 → 5 | complete; audited candidate set |
+| object-inspect quote escaping | 35 → 5 | complete; audited candidate set |
+| Zod TypeScript declaration regression | 54 → 9 | complete run; no global-minimum claim |
+| markdown-it tab/list regression | 66 → 62 | **partial**; stopped at 60-run budget |
+
+Each buggy version fails and the pinned fixed version passes the same upstream-derived probe. Reduced capsules reproduce the target failure in fresh copies. These are adapted published distributions, not full upstream application checkouts. Details are in [historical functional cases](corpus/functional/README.md) and [expanded historical evidence](corpus/expanded/results.json).
+
+Deep source examples: JS 177→107 bytes, 9→5 AST units (strict transcript); TS 187→127 bytes, 8→5 AST units (real tsc build plus explicit target message because emitted stack lines move). Builds must be included in the command. The later historical object-inspect source run reduced 19,000→1,968 bytes at a 250-source-candidate limit; later files were not reached. This is a verified partial reduction, not a source minimum.
 
 ```sh
 node bin/reprocapsule.js compare --repo ./failing --command 'node probe.cjs' --passing-repo ./passing --passing-command 'node probe.cjs' --capsule ./capsule
@@ -110,7 +187,7 @@ Portable format v1 is gzip-compressed JSON with base64 file payloads and SHA-256
 
 ## Beta engineering evidence
 
-[Expanded historical evidence](corpus/expanded/results.json) adds Zod 3.23.0 → 3.23.1 (a real TypeScript declaration-contract build regression; 54 → 9 files) and markdown-it 12.3.0 → 12.3.1 (upstream tab/list parsing regression; 66 → 62 files). markdown-it stopped at its 60-run budget and remains a verified partial reduction. These adapted published libraries are not full application or upstream-suite validation.
+[Expanded historical evidence](corpus/expanded/results.json) contains the detailed Zod and markdown-it measurements. Zod completed a 54 → 9 file reduction. markdown-it reached only 66 → 62 files before its 60-run budget was exhausted, so it is intentionally treated as limited evidence rather than a headline reduction result. These adapted published libraries are not full application or upstream-suite validation.
 
 Multi-file tests reduce two JS sources from 157 → 120 bytes and two TS sources from 146 → 109 bytes with a real compiler command; both reach a no-change round. The historical object-inspect production source reaches 19,000 → 1,968 bytes at a 250-source-candidate limit; later files were not reached. No global minimum is claimed.
 

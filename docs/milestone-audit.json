@@ -84,8 +84,17 @@
       "evidence": "docs/performance-current.json"
     },
     "9": {
-      "status": "PARTIAL",
-      "scope": "Local final suite and package dry-run passed. Node24 Ubuntu/macOS CI configured but not executed remotely. private=true, UNLICENSED; publication blocked pending license choice and remote evidence."
+      "status": "COMPLETED",
+      "scope": "MIT license present; local package dry-run passed; Node 24 Ubuntu/macOS core CI and Ubuntu historical validation passed on the beta release commit.",
+      "remoteCi": {
+        "commit": "6301a9fe85ba237fba27d84826fb9e5a9c6c880d",
+        "runId": 37525635007,
+        "ubuntu": "PASS",
+        "macos": "PASS",
+        "historical": "PASS",
+        "coreTestsPerOs": 96
+      },
+      "publication": "GitHub v0.6.0-beta.1 pre-release published. npm publication has not occurred; package.json remains private:true."
     }
   },
   "preexistingUntracked": "Out-of-scope draft preparation moved to ignored work/unused-historical-preparation; never run or committed.",
@@ -100,5 +109,14 @@
     "independentProjects": 2,
     "sourceUnchanged": true,
     "publicationPerformed": false
+  },
+  "currentRelease": {
+    "tag": "v0.6.0-beta.1",
+    "status": "PUBLISHED_PRE_RELEASE",
+    "targetCommit": "6301a9fe85ba237fba27d84826fb9e5a9c6c880d",
+    "remoteCiRun": 37525635007,
+    "license": "MIT",
+    "npmPublished": false,
+    "externalUserValidation": "NOT_YET_ESTABLISHED"
   }
 }

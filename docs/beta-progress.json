@@ -55,7 +55,7 @@
     "focusedTestsPassed": 15,
     "affectedFixPortableChecksPassed": 7,
     "evidence": "docs/repeated-reduction-proof.json",
-    "scope": "Explicit repeat-runs 2\u2013100 plus fractional match-threshold; fresh copy/install per observation, shared run/time budgets and checkpoint configuration. Deterministic default unchanged; no candidate caching or minimality audit in repeated mode.",
+    "scope": "Explicit repeat-runs 2–100 plus fractional match-threshold; fresh copy/install per observation, shared run/time budgets and checkpoint configuration. Deterministic default unchanged; no candidate caching or minimality audit in repeated mode.",
     "limits": "Observed frequency is not probability. verify-fix explicitly refuses repeated capsules rather than inferring a fix from one passing sample."
   },
   "dependencySearch": {
@@ -113,6 +113,45 @@
     "personalPathsInEvidence": 0
   },
   "remoteGate": {
-    "status": "PENDING"
+    "status": "PASS",
+    "commit": "6301a9fe85ba237fba27d84826fb9e5a9c6c880d",
+    "runId": 37525635007,
+    "url": "https://github.com/can821/ReproCapsule/actions/runs/37525635007",
+    "jobs": {
+      "test (ubuntu-latest)": "PASS",
+      "test (macos-latest)": "PASS",
+      "historical": "PASS"
+    },
+    "coreTests": {
+      "ubuntu": {
+        "passed": 96,
+        "failed": 0,
+        "skipped": 0
+      },
+      "macos": {
+        "passed": 96,
+        "failed": 0,
+        "skipped": 0
+      }
+    },
+    "checks": [
+      "npm ci --ignore-scripts",
+      "npm test",
+      "real TypeScript compiler and mapped source reduction proof",
+      "npm pack --dry-run",
+      "historical validation"
+    ]
+  },
+  "release": {
+    "status": "PUBLISHED_PRE_RELEASE",
+    "tag": "v0.6.0-beta.1",
+    "targetCommit": "6301a9fe85ba237fba27d84826fb9e5a9c6c880d",
+    "publishedAt": "2026-10-07T00:25:24Z",
+    "npmPublished": false,
+    "distribution": "GitHub source/pre-release; package.json remains private:true"
+  },
+  "externalUserValidation": {
+    "status": "NOT_YET_ESTABLISHED",
+    "nextGate": "independent external users and issue-driven hardening"
   }
 }
