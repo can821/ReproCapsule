@@ -1,3 +1,4 @@
+import {quote} from '../src/package-manager.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -27,7 +28,7 @@ test('real compiled TypeScript coverage maps executed regions back to retained s
  const root=await temporary(t),repo=path.join(root,'repo');await mkdir(repo);
  await writeFile(path.join(repo,'app.ts'),"declare const process: {argv: string[]};\nfunction failure(): never {\n throw new Error('TS_REGION_TARGET');\n}\nfunction passing(): number {\n return 42;\n}\nif(process.argv[2]==='fail') failure(); else passing();\n");
  const parser=process.env.REPROCAPSULE_TYPESCRIPT||path.resolve('node_modules/typescript/lib/typescript.js');
- const build=`node '${path.join(path.dirname(parser),'tsc.js')}' app.ts --sourceMap --outDir dist --strict --noEmitOnError --target es2022 && node dist/app.js`;
+ const build=`node ${quote(path.join(path.dirname(parser),'tsc.js'))} app.ts --sourceMap --outDir dist --strict --noEmitOnError --target es2022 && node dist/app.js`;
  const r=await compareExecutions({repo,command:build+' fail',passingCommand:build+' pass'});
  assert.ok(r.failing.coverage.find(c=>c.file==='app.ts').sourceMapped);
  assert.ok(r.differential.failingOnly.find(c=>c.file==='app.ts').lines.includes(3));

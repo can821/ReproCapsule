@@ -1,4 +1,4 @@
-import { readFile, writeFile, rm, mkdtemp, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, rm, mkdtemp, mkdir, access } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { runCommand } from './runner.js';
@@ -6,7 +6,13 @@ import { discoverWorkspaces } from './workspaces.js';
 import { ReproError } from './errors.js';
 
 export const dependencySections = ['dependencies', 'devDependencies', 'optionalDependencies'];
-export const quote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+export const quote = (value) => {
+  if (process.platform !== 'win32') return `'${value.replaceAll("'", "'\\''")}'`;
+  // Internal command arguments, not the user's trusted shell command. Fail closed
+  // on cmd expansion syntax; ordinary paths (including spaces) remain supported.
+  if (/[\r\n%!"]/.test(value)) throw new ReproError('UNSUPPORTED_COMMAND_ARGUMENT','Windows internal arguments cannot contain quotes, percent, exclamation or newlines.');
+  return '"' + value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1') + '"';
+};
 export function dependencyIds(pkg) {
   return dependencySections.flatMap((section) => Object.keys(pkg[section] ?? {}).map((name) => `${section}:${name}`)).sort();
 }
@@ -81,11 +87,15 @@ export async function detectPackageManager(root, files) {
 
 export async function discoverNpm({ npmPath = process.env.REPROCAPSULE_NPM, cwd, timeoutMs = 5000 } = {}) {
   let executable = npmPath || 'npm';
-  if (executable.includes('/')) executable = path.resolve(executable);
+  if (path.isAbsolute(executable) || executable.includes('/') || executable.includes('\\')) executable = path.resolve(executable);
   else {
-    const located = await runCommand({ command: `command -v ${quote(executable)}`, cwd, timeoutMs });
-    if (located.exitCode !== 0 || !path.isAbsolute(located.stdout.trim())) throw new ReproError('NPM_UNAVAILABLE', 'npm unavailable; supply --npm-path or REPROCAPSULE_NPM.');
-    executable = located.stdout.trim();
+    const located = await runCommand({ command: process.platform === 'win32' ? `where.exe ${quote(executable)}` : `command -v ${quote(executable)}`, cwd, timeoutMs });
+    if (located.exitCode !== 0 || !path.isAbsolute(located.stdout.trim().split(/\r?\n/)[0])) throw new ReproError('NPM_UNAVAILABLE', 'npm unavailable; supply --npm-path or REPROCAPSULE_NPM.');
+    executable = located.stdout.trim().split(/\r?\n/)[0];
+  }
+  if (process.platform === 'win32' && !/\.[cm]?js$/.test(executable)) {
+    const cli = path.join(path.dirname(executable),'node_modules','npm','bin','npm-cli.js');
+    try { await access(cli); executable=cli; } catch { throw new ReproError('NPM_UNAVAILABLE','Supply the npm-cli.js path for this Windows npm installation.'); }
   }
   const command = /\.[cm]?js$/.test(executable) ? `${quote(process.execPath)} ${quote(executable)}` : quote(executable);
   const result = await runCommand({ command: `${command} --version`, cwd, timeoutMs });
@@ -135,7 +145,8 @@ export async function writePackageSelection(cwd, pkg, ids) {
 export async function npmEnvironment(npm, workspaceRoot) {
   const bin = path.join(workspaceRoot, 'tools');
   await mkdir(bin, { recursive: true });
-  await writeFile(path.join(bin, 'npm'), `#!/bin/sh\nexec ${npm.command} "$@"\n`, { mode: 0o755 });
+  if(process.platform==='win32') await writeFile(path.join(bin,'npm.cmd'), `@echo off\r\n${npm.command} %*\r\n`);
+  else await writeFile(path.join(bin, 'npm'), `#!/bin/sh\nexec ${npm.command} "$@"\n`, { mode: 0o755 });
   return { PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}`,
     npm_config_cache: path.join(workspaceRoot, 'command-cache'), npm_config_update_notifier: 'false' };
 }

@@ -84,3 +84,13 @@ test('install timeout and failure have distinct structured error codes', async (
   await writeFile(fake, 'console.error("fixture installation failure");process.exit(1)');
   await assert.rejects(npmInstall({ cwd: root, npm }), { code: 'INSTALL_FAILED' });
 });
+
+test('internal command arguments preserve spaces and shell punctuation',async t=>{
+ const cwd=await temporary(t),script=path.join(cwd,'echo & argument.cjs');
+ await writeFile(script,'console.log(JSON.stringify(process.argv.slice(2)))');
+ const values=['a b','a&b','parentheses(x)','trailing\\'];
+ const {runCommand}=await import('../src/runner.js');
+ const result=await runCommand({cwd,command:[process.execPath,script,...values].map(quote).join(' ')});
+ assert.equal(result.exitCode,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),values);
+ if(process.platform==='win32') for(const value of ['%PATH%','!var!','a"b'])assert.throws(()=>quote(value),{code:'UNSUPPORTED_COMMAND_ARGUMENT'});
+});

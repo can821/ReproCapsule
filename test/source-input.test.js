@@ -1,3 +1,4 @@
+import {quote} from '../src/package-manager.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -71,7 +72,7 @@ new Example().run();
  await writeFile(path.join(repo,'app.ts'),text);
  const parser=sourceParser || path.resolve('node_modules/typescript/lib/typescript.js');
  const compiler=path.join(path.dirname(parser),'tsc.js');
- const command=`node '${compiler.replaceAll("'", "'\\''")}' app.ts --outDir dist --noEmitOnError --strict --target es2022 && node dist/app.js`;
+ const command=`node ${quote(compiler)} app.ts --outDir dist --noEmitOnError --strict --target es2022 && node dist/app.js`;
  const r=await buildCapsule({repo,command,output:path.join(root,'out'),reduceSource:'app.ts',sourceParser,matchStderr:'Error: TS_TARGET'});
  const reduced=await readFile(path.join(r.output,'app.ts'),'utf8');
  assert.ok(!reduced.includes('unused'));assert.ok(!reduced.includes('noise'));assert.ok(reduced.includes('const message'));

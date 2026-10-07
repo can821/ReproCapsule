@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         node: [22, 24]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -21,6 +21,8 @@ jobs:
       - run: npm test
       - name: Real compiler and mapped source reduction
         run: node scripts/typescript-proof.js work/ci-typescript --reduce-source
+      - name: Installed tarball CLI and fresh portable round-trip
+        run: node scripts/packaged-proof.js
       - run: npm pack --dry-run
   historical:
     runs-on: ubuntu-latest

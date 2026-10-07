@@ -21,3 +21,6 @@ export async function fingerprint(root) {
   await walk(root);
   return hash.digest('hex');
 }
+
+// Encoding keeps test program text out of either platform's shell grammar.
+export function nodeCommand(code) { return `node -e "eval(Buffer.from('${Buffer.from(code).toString('base64')}','base64').toString())"`; }

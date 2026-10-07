@@ -8,7 +8,7 @@ import { failureSignature } from './failure-signature.js';
 import { createWorkspace, copyFiles, isControlFile, validateOutput } from './workspace.js';
 import { reduceFiles } from './reducer.js';
 import { ReproError } from './errors.js';
-import { detectPackageManager, discoverNpm, npmInstall, selectDependencies, localReferences, writePackageSelection, quote, npmEnvironment, commandUsesNpm } from './package-manager.js';
+import { detectPackageManager, discoverNpm, npmInstall, selectDependencies, localReferences, writePackageSelection, npmEnvironment, commandUsesNpm } from './package-manager.js';
 import { createPredicate, matchesPredicate } from './predicate.js';
 import { fileHashes, snapshotId } from './integrity.js';
 import { verifyCapsule } from './verify.js';
@@ -48,8 +48,8 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
   let outputCreated = false, passingWorkspace;
   try {
     if (paired) passingWorkspace = await createWorkspace(repo);
-    if (workspace.files.some((file) => ['capsule.json', 'reproduce.sh', 'README.reprocapsule.md'].includes(file))) {
-      throw new ReproError('RESERVED_FILENAME', 'Source uses a reserved capsule filename: capsule.json, reproduce.sh or README.reprocapsule.md.');
+    if (workspace.files.some((file) => ['capsule.json', 'reproduce.sh', 'reproduce.cjs', 'README.reprocapsule.md'].includes(file))) {
+      throw new ReproError('RESERVED_FILENAME', 'Source uses a reserved capsule filename: capsule.json, reproduce.sh, reproduce.cjs or README.reprocapsule.md.');
     }
     keep = keep.map((file) => {
       if (typeof file !== 'string' || path.isAbsolute(file) || file.split(/[\\/]/).includes('..')) throw new ReproError('INVALID_ARGUMENTS', '--keep must stay inside the repository.');
@@ -346,11 +346,15 @@ export async function buildCapsule({ repo, command, output, timeoutMs = 10_000, 
     if (input) await writeFile(path.join(destination, input.file), input.content);
     if (sourceInput) await sourceInput.apply(destination,retained);
     const readmeName = retained.includes('README.md') ? 'README.reprocapsule.md' : 'README.md';
-    manifest.generatedFiles = ['capsule.json', readmeName, 'reproduce.sh'];
+    manifest.generatedFiles = ['capsule.json', readmeName, 'reproduce.cjs'];
     const installInstruction = npm ? `First run npm ci${allowInstallScripts ? '' : ' --ignore-scripts'} (scripts ${allowInstallScripts ? 'explicitly enabled' : 'disabled'}).\n` : '';
-    await writeFile(path.join(destination, readmeName), `# Reproduction capsule\n\n${terminationReason === 'complete' ? 'Reduction completed.' : 'PARTIAL reduction: ' + terminationReason}\n\n${installInstruction}Then run sh ./reproduce.sh from this directory.\nExpected failing exit code: ${signature.exitCode}.${repetition ? ` Repeated verification requires ${repetition.minMatches}/${repetition.runs} matching observations; a single run may pass.` : ''}\nFailure predicate: ${predicate.type}${predicate.type === 'strict' ? '' : ' (explicit user choice; broader than transcript equality)'}.\n\n${paired ? 'Paired capsule: verify rechecks the target failure AND a fresh exit-zero passing command. reproduce.sh runs only the failing side.\n' : ''}Use reprocapsule verify PATH for independent fresh-copy verification.\nCommands are trusted local input, NOT sandboxed. Review before executing.\nNo node_modules are shipped. Environment values and raw command output are not recorded.\n`);
-    await writeFile(path.join(destination, 'reproduce.sh'), `#!/bin/sh\ncd -- "$(dirname -- "$0")" || exit 1\nexec /bin/sh -c ${quote(command)}\n`, { mode: 0o755 });
-    manifest.fileHashes = await fileHashes(destination, [...retained, readmeName, 'reproduce.sh']);
+    await writeFile(path.join(destination, readmeName), `# Reproduction capsule\n\n${terminationReason === 'complete' ? 'Reduction completed.' : 'PARTIAL reduction: ' + terminationReason}\n\n${installInstruction}Then run node ./reproduce.cjs from this directory.\nExpected failing exit code: ${signature.exitCode}.${repetition ? ` Repeated verification requires ${repetition.minMatches}/${repetition.runs} matching observations; a single run may pass.` : ''}\nFailure predicate: ${predicate.type}${predicate.type === 'strict' ? '' : ' (explicit user choice; broader than transcript equality)'}.\n\n${paired ? 'Paired capsule: verify rechecks the target failure AND a fresh exit-zero passing command. reproduce.cjs runs only the failing side.\n' : ''}Use reprocapsule verify PATH for independent fresh-copy verification.\nCommands are trusted local input, NOT sandboxed. Review before executing.\nNo node_modules are shipped. Environment values and raw command output are not recorded.\n`);
+    await writeFile(path.join(destination, 'reproduce.cjs'), `const {spawnSync}=require('node:child_process');
+const result=spawnSync(${JSON.stringify(command)},{cwd:__dirname,shell:true,stdio:'inherit'});
+if(result.error)console.error(result.error.message);
+process.exitCode=result.status??1;
+`);
+    manifest.fileHashes = await fileHashes(destination, [...retained, readmeName, 'reproduce.cjs']);
     await writeFile(path.join(destination, 'capsule.json'), JSON.stringify(manifest, null, 2) + '\n');
     // Verification copies the finished capsule, installs from scratch, and never
     // trusts the node_modules or process-written files from any reduction attempt.

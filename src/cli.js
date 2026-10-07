@@ -58,7 +58,7 @@ Options:
   --json                              Machine-readable result
   --help                              Show help
 
-Node.js 24+, npm 9+ for external packages, macOS/Linux. Trusted local commands;
+Node.js 22+, npm 9+ for external packages. See README for verified platforms. Trusted local commands;
 NOT a sandbox. Installs occur only in copied workspaces; scripts default OFF.
 Output must be new and outside the source. Final verification always uses a fresh copy.
 `;

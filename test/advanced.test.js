@@ -1,3 +1,4 @@
+import {nodeCommand} from './helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile, readFile, access } from 'node:fs/promises';
@@ -67,7 +68,7 @@ test('strict predicate remains default; explicit stderr matcher is opt-in and re
 test('configured baseline repetitions catch a later disagreeing run', async (t) => {
   const { root, repo, output } = await source(t, { 'data.txt': 'irrelevant' });
   const counter = path.join(root, 'counter');
-  const command = `node -e 'const fs=require("node:fs");const p=${JSON.stringify(counter)};const n=fs.existsSync(p)?Number(fs.readFileSync(p)):0;fs.writeFileSync(p,String(n+1));console.error(n<2?"target":"different");process.exit(1)'`;
+  const command = nodeCommand(`const fs=require("node:fs");const p=${JSON.stringify(counter)};const n=fs.existsSync(p)?Number(fs.readFileSync(p)):0;fs.writeFileSync(p,String(n+1));console.error(n<2?"target":"different");process.exit(1)`);
   await assert.rejects(buildCapsule({ repo, output, command, baselineRuns: 3 }), { code: 'UNSTABLE_BASELINE' });
   await assert.rejects(access(output));
 });
@@ -99,7 +100,7 @@ test('time budget stops reduction but still verifies a partial capsule', async (
 
 test('repeated candidate configurations hit the in-memory cache', async (t) => {
   const { repo, output } = await source(t, { a: 'required', b: 'unused', c: 'unused', d: 'required' });
-  const command = `node -e 'const fs=require("node:fs");fs.readFileSync("a");fs.readFileSync("d");console.error("target");process.exit(1)'`;
+  const command = nodeCommand(`const fs=require("node:fs");fs.readFileSync("a");fs.readFileSync("d");console.error("target");process.exit(1)`);
   const result = await buildCapsule({ repo, output, command });
   assert.deepEqual(result.manifest.retainedFiles, ['a', 'd']);
   assert.ok(result.manifest.reduction.cacheHits > 0);

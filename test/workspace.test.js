@@ -12,7 +12,7 @@ test('workspace excludes secrets, VCS, modules and symlinks without changing sou
     await mkdir(path.dirname(path.join(source, file)), { recursive: true });
     await writeFile(path.join(source, file), 'example');
   }
-  await symlink('/etc/passwd', path.join(source, 'external-link'));
+  await symlink(dir, path.join(source, 'external-link'), process.platform==='win32'?'junction':'dir');
   const before = await fingerprint(source);
   const workspace = await createWorkspace(source);
   const tempRoot = workspace.root;
@@ -33,11 +33,11 @@ test('workspace excludes secrets, VCS, modules and symlinks without changing sou
 test('output cannot overwrite existing paths or enter source through symlinks', async (t) => {
   const root = await temporary(t), repo = path.join(root, 'repo');
   await mkdir(repo);
-  await symlink(repo, path.join(root, 'alias'));
+  await symlink(repo, path.join(root, 'alias'), process.platform==='win32'?'junction':'dir');
   await assert.rejects(validateOutput(repo, path.join(repo, 'out')), { code: 'UNSAFE_OUTPUT' });
   await assert.rejects(validateOutput(repo, path.join(root, 'alias/out')), { code: 'UNSAFE_OUTPUT' });
   await assert.rejects(validateOutput(repo, root), { code: 'OUTPUT_EXISTS' });
-  assert.match(await validateOutput(repo, path.join(root, 'new/out')), /new\/out$/);
+  assert.match(await validateOutput(repo, path.join(root, 'new/out')), /new[\\/]out$/);
 });
 
 test('copying rejects traversal paths', async (t) => {

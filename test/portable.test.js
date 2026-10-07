@@ -19,6 +19,10 @@ test('portable pack/inspect/unpack/fresh verify preserves target, refuses corrup
  const envelope=JSON.parse(gunzipSync(await readFile(archive)));envelope.files[0].path='../escape';envelope.integrity=digest(JSON.stringify(envelope.files));
  const bad=path.join(storage,'bad.rcap.gz');await writeFile(bad,gzipSync(JSON.stringify(envelope)));
  await assert.rejects(unpackCapsule({archive:bad,output:path.join(root,'bad')}),{code:'INVALID_ARCHIVE'});
+ for(const name of ['C:/escape','file:stream','CON.txt','trailing.','space ','dir/NUL','//server/share']) {
+  envelope.files[0].path=name;envelope.integrity=digest(JSON.stringify(envelope.files));await writeFile(bad,gzipSync(JSON.stringify(envelope)));
+  await assert.rejects(inspectArchive(bad),{code:'INVALID_ARCHIVE'},name);
+ }
  envelope.files[0].path='app.cjs';envelope.files[0].data='dGFtcGVy';await writeFile(bad,gzipSync(JSON.stringify(envelope)));
  await assert.rejects(inspectArchive(bad),{code:'INVALID_ARCHIVE'});
 });

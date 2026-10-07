@@ -1,3 +1,4 @@
+import {quote} from '../src/package-manager.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile, readFile, access, readdir, realpath } from 'node:fs/promises';
@@ -26,7 +27,7 @@ test('CLI reduces real fixture, preserves exact failure and never changes source
   assert.equal(manifest.reduction.finalCandidateCount, 4);
   assert.deepEqual(manifest.retainedFiles, ['data/profile.json', 'package-lock.json', 'package.json', 'src/parser.js', 'src/schema.js', 'test/repro.js']);
   assert.equal(manifest.failurePreserved, true);
-  const observed = await runCommand({ command: 'sh ./reproduce.sh', cwd: output });
+  const observed = await runCommand({ command: 'node ./reproduce.cjs', cwd: output });
   assert.equal(sameFailure(manifest.failureSignature, failureSignature(observed, { roots: [output, await realpath(output)] })), true);
   assert.equal(await fingerprint(fixture), before);
   for (const excluded of ['.env.example', 'node_modules', '.git']) await assert.rejects(access(path.join(output, excluded)));
@@ -59,12 +60,12 @@ test('command writes cannot contaminate later attempts or the exported capsule',
     console.error('TypeError: intentional fixture'); process.exit(1);`);
   await writeFile(path.join(source, 'unused.txt'), 'unneeded');
   const before = await fingerprint(source);
-  const { output, manifest } = await buildCapsule({ repo: source, command: "node 'app.cjs'", output: path.join(root, 'capsule') });
+  const { output, manifest } = await buildCapsule({ repo: source, command: 'node app.cjs', output: path.join(root, 'capsule') });
   assert.deepEqual(manifest.retainedFiles, ['app.cjs']);
   assert.equal(await fingerprint(source), before);
   await assert.rejects(access(path.join(output, 'generated')));
   assert.equal(await readFile(path.join(output, 'app.cjs'), 'utf8'), await readFile(path.join(source, 'app.cjs'), 'utf8'));
-  const replay = await runCommand({ cwd: root, command: `sh '${output}/reproduce.sh'` });
+  const replay = await runCommand({ cwd: root, command: `node ${quote(path.join(output,'reproduce.cjs'))}` });
   assert.equal(sameFailure(manifest.failureSignature, failureSignature(replay, { roots: [await realpath(output)] })), true);
 });
 

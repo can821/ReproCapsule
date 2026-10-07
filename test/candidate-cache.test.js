@@ -1,3 +1,4 @@
+import {nodeCommand} from './helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile, readFile, readdir, symlink } from 'node:fs/promises';
@@ -12,7 +13,7 @@ test('disk outcomes are scope-bound, corruption checked, and never retain raw en
   const root = await temporary(t), scope = { source: 'one', environment: environmentIdentity({ TEST_SECRET: 'private-test-value' }) };
   const linked = path.join(root, 'linked');
   await mkdir(linked);
-  await symlink(root, path.join(linked, 'reprocapsule-cache-v1'));
+  await symlink(root, path.join(linked, 'reprocapsule-cache-v1'), process.platform==='win32'?'junction':'dir');
   await assert.rejects(persistentCache(linked, scope), { code: 'UNSAFE_CACHE' });
   const a = await persistentCache(root, scope);
   await a.set('candidate', valid);
@@ -35,7 +36,7 @@ test('resume reuses actual prior-session outcomes but independently rechecks the
   const root = await temporary(t), repo = path.join(root, 'repo'), checkpoint = path.join(root, 'progress.json');
   await mkdir(repo);
   for (const name of ['a', 'b', 'c', 'd']) await writeFile(path.join(repo, name), name);
-  const command = `node -e 'const fs=require("node:fs");fs.readFileSync("a");fs.readFileSync("d");console.error("target");process.exit(1)'`;
+  const command = nodeCommand(`const fs=require("node:fs");fs.readFileSync("a");fs.readFileSync("d");console.error("target");process.exit(1)`);
   await buildCapsule({ repo, command, output: path.join(root, 'partial'), checkpoint, cacheDir: path.join(root, 'cache'), maxRuns: 6 });
   const result = await buildCapsule({ ...await resumeOptions(checkpoint), output: path.join(root, 'finished'), audit: true });
   assert.ok(result.manifest.reduction.persistentCacheHits >= 2);

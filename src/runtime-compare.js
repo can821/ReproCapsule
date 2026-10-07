@@ -2,11 +2,10 @@ import path from 'node:path';
 import {access} from 'node:fs/promises';
 import {constants} from 'node:fs';
 import {createWorkspace} from './workspace.js';
-import {discoverNpm,npmInstall,npmEnvironment} from './package-manager.js';
+import {discoverNpm,npmInstall,npmEnvironment,quote} from './package-manager.js';
 import {runCommand} from './runner.js';
 import {createPredicate,matchesPredicate} from './predicate.js';
 import {ReproError} from './errors.js';
-const quote=value=>"'"+value.replaceAll("'","'\\''")+"'";
 export async function compareRuntimes({repo,script,runtimes,matcher,matchStderr,exitCode,...options}) {
  const predicate=createPredicate({matcher,matchStderr,exitCode});
  if(predicate.type==='strict'||!Array.isArray(runtimes)||!runtimes.length||runtimes.length>10||runtimes.some(r=>typeof r!=='string'||!path.isAbsolute(r))||typeof script!=='string'||path.isAbsolute(script)||script.split(/[\\/]/).includes('..'))throw new ReproError('INVALID_ARGUMENTS','Provide an explicit target, relative Node script, and 1–10 existing absolute runtime executable paths.');

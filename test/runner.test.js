@@ -5,8 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { runCommand } from '../src/runner.js';
 
-const quote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
-const node = (code) => `${quote(process.execPath)} -e ${quote(code)}`;
+import {nodeCommand as node} from './helpers.js';
 
 test('runner captures output, status and requested working directory', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'runner-'));
@@ -47,4 +46,15 @@ test('runner bounds captured output', async () => {
 test('runner reports startup errors and rejects invalid limits', async () => {
   await assert.rejects(runCommand({ cwd: '/does-not-exist-reprocapsule', command: 'node -v' }), { code: 'COMMAND_START_FAILED' });
   await assert.rejects(runCommand({ cwd: os.tmpdir(), command: 'node -v', timeoutMs: 0 }), { code: 'INVALID_LIMIT' });
+});
+
+test('runner reaps descendants after the command exits normally',async()=>{
+ const cwd=await mkdtemp(path.join(os.tmpdir(),'runner-'));
+ try {
+  const result=await runCommand({cwd,command:node("const child=require('node:child_process').spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore'});require('node:fs').writeFileSync('child.pid',String(child.pid));child.unref();")});
+  assert.equal(result.exitCode,0);
+  const pid=Number(await readFile(path.join(cwd,'child.pid'),'utf8'));let alive=true;
+  for(let i=0;i<50&&alive;i++){await new Promise(resolve=>setTimeout(resolve,20));try{process.kill(pid,0);}catch(error){assert.equal(error.code,'ESRCH');alive=false;}}
+  assert.equal(alive,false,'background descendant must be terminated after normal command exit');
+ }finally{await rm(cwd,{recursive:true,force:true});}
 });

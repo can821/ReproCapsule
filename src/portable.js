@@ -7,7 +7,7 @@ import {validateOutput} from './workspace.js';
 import {ReproError} from './errors.js';
 const limit=64*1024*1024;
 function allowed(name) {
- return typeof name==='string' && name.length>0 && !name.includes('\\') && !path.isAbsolute(name) && name.split('/').every(p=>p && p!=='.' && p!=='..' && !['.git','node_modules','.cache','coverage','work','tooling','checkpoints','tmp','.env'].includes(p) && !p.startsWith('.env.') && !/^checkpoint.*\.json$/.test(p));
+ return typeof name==='string' && name.length>0 && !name.includes('\\') && !path.isAbsolute(name) && name.split('/').every(p=>p && p!=='.' && p!=='..' && !/[:\x00-\x1f]/.test(p) && !/[. ]$/.test(p) && !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p) && !['.git','node_modules','.cache','coverage','work','tooling','checkpoints','tmp','.env'].includes(p) && !p.startsWith('.env.') && !/^checkpoint.*\.json$/.test(p));
 }
 function portableText(bytes) {
  // Refuse local personal paths instead of rewriting source or silently changing identity.
@@ -21,8 +21,8 @@ async function loadArchive(file) {
   if(envelope.format!=='reprocapsule-gzip-json' || envelope.version!==1 || !Array.isArray(envelope.files) || envelope.files.length>10000 || digest(JSON.stringify(envelope.files))!==envelope.integrity) throw new Error('archive schema/integrity');
   const names=new Set();let total=0;
   for(const f of envelope.files) {
-   if(!allowed(f.path) || names.has(f.path) || typeof f.data!=='string' || ![0o644,0o755].includes(f.mode)) throw new Error('entry');
-   names.add(f.path);
+   if(!allowed(f.path) || names.has(f.path.toLowerCase()) || typeof f.data!=='string' || ![0o644,0o755].includes(f.mode)) throw new Error('entry');
+   names.add(f.path.toLowerCase());
    const bytes=Buffer.from(f.data,'base64'); total+=bytes.length;
    if(total>32*1024*1024 || bytes.toString('base64')!==f.data || digest(bytes)!==f.sha256) throw new Error('entry integrity/size');
    portableText(bytes);

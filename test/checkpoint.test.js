@@ -1,3 +1,4 @@
+import {nodeCommand} from './helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile, readFile, access, readdir, chmod, stat } from 'node:fs/promises';
@@ -12,7 +13,7 @@ async function fixture(t) {
   const root = await temporary(t), repo = path.join(root, 'repo'), checkpoint = path.join(root, 'progress.json');
   await mkdir(repo);
   for (const name of ['a', 'b', 'c', 'd']) await writeFile(path.join(repo, name), name);
-  const command = `node -e 'const fs=require("node:fs");fs.readFileSync("a");fs.readFileSync("d");console.error("target");process.exit(1)'`;
+  const command = nodeCommand(`const fs=require("node:fs");fs.readFileSync("a");fs.readFileSync("d");console.error("target");process.exit(1)`);
   return { root, repo, checkpoint, command, output: path.join(root, 'partial') };
 }
 
@@ -55,7 +56,7 @@ test('source edits, runtime mismatch, invalid schema and malformed checkpoints r
   await assert.rejects(buildCapsule({ ...await resumeOptions(options.checkpoint), output: path.join(options.root, 'changed') }), { code: 'SOURCE_CHANGED' });
   await writeFile(path.join(options.repo, 'b'), 'b');
   const mode = (await stat(path.join(options.repo, 'b'))).mode & 0o777;
-  await chmod(path.join(options.repo, 'b'), mode ^ 0o100);
+  await chmod(path.join(options.repo, 'b'), mode ^ (process.platform==='win32'?0o200:0o100));
   await assert.rejects(buildCapsule({ ...await resumeOptions(options.checkpoint), output: path.join(options.root, 'mode') }), { code: 'SOURCE_CHANGED' });
   await chmod(path.join(options.repo, 'b'), mode);
   const incompatible = JSON.parse(original); incompatible.runtime.node = 'v0.0.0';
