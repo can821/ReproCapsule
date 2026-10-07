@@ -8,7 +8,7 @@ For developers reporting bugs, library/framework maintainers, open-source contri
 
 ## Run it
 
-Use Node 24 and npm 9+ for the remotely verified release path. GitHub source installation and a locally packed tarball were each tested in fresh directories, including reduction, verification and a portable round-trip. Nothing is published to npm; `private: true` remains enabled.
+Use Node 22 or 24 and npm 9+ on Ubuntu/Linux or macOS. GitHub source installation and a locally packed tarball were each tested in fresh directories, including reduction, verification and a portable round-trip. Nothing is published to npm; `private: true` remains enabled.
 
 ```sh
 git clone https://github.com/can821/ReproCapsule.git
@@ -26,11 +26,11 @@ Output must be new and outside the input project. Start with a trusted project; 
 
 | Platform | Node 24 | Node 22 |
 |---|---|---|
-| Ubuntu/Linux | Release CI verified | Candidate matrix configured; remote verification outstanding |
-| macOS | Release CI verified | Local 22.23.3: 96/96 tests and TypeScript proof passed; remote verification outstanding |
+| Ubuntu/Linux | Remote CI verified | Remote CI verified |
+| macOS | Remote CI verified | Remote CI verified |
 | Windows | Unsupported | Unsupported |
 
-The published [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) remains unchanged. Its [release CI](https://github.com/can821/ReproCapsule/actions/runs/37525635007) passed 96 core tests on Ubuntu/macOS Node 24, historical validation, real TypeScript proof and package checks. The current checkout permits Node >=22 after local verification; the new matrix must pass before Node 22 is declared remotely supported. Other Node majors are not implied to have been tested by the engine range.
+The published [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) remains unchanged. Current main commit `052e9dad233aac13ec7071bc0975b428a05114db` passed Ubuntu/macOS × Node 22/24 core tests, real TypeScript proof and package checks, plus the historical job in [CI run 37555478122](https://github.com/can821/ReproCapsule/actions/runs/37555478122). The engine range is >=22; other Node majors are not implied to have been tested.
 
 See [portability audit and installation evidence](docs/portability-validation.md), [historical regressions](#historical-regressions-and-advanced-workflows), and [security and limitations](#security-and-remaining-scope). External-user validation remains outstanding. MIT licensed; Copyright (c) 2026 Can Yilmaz.
 
@@ -116,11 +116,11 @@ No browser reproduction or additional package managers. Runtime comparison accep
 ### Current gaps and next validation targets
 
 - No external-user validation has been completed yet.
-- Windows remains unsupported; Node 22 remote validation is outstanding. yarn and pnpm remain unsupported.
+- Windows, yarn, pnpm and Bun remain unsupported.
 - No Docker/container sandbox is provided; untrusted projects or plugins should not be executed directly.
 - Candidate evaluation is sequential; parallel evaluation is not implemented.
 - There is no apples-to-apples benchmark against other reducers yet.
-- External-project validation is gated on the new remote matrix; no additional framework support is advertised before that proof.
+- No broad framework compatibility or external-user validation is claimed.
 
 ### GitHub Actions usage today
 

@@ -229,17 +229,26 @@
     "reason": "POSIX execution, npm shim, capsule script and process-group lifecycle need coordinated Windows implementation."
   },
   "remoteMatrix": {
-    "status": "NOT RUN",
+    "status": "PASS",
     "requested": [
       "ubuntu-node22",
       "ubuntu-node24",
       "macos-node22",
       "macos-node24"
-    ]
+    ],
+    "commit": "052e9dad233aac13ec7071bc0975b428a05114db",
+    "runUrl": "https://github.com/can821/ReproCapsule/actions/runs/37555478122",
+    "results": {
+      "ubuntu-node22": "PASS",
+      "ubuntu-node24": "PASS",
+      "macos-node22": "PASS",
+      "macos-node24": "PASS",
+      "historical": "PASS"
+    }
   },
   "externalProject": {
-    "status": "NOT RUN",
-    "reason": "Gated on remote matrix as requested",
+    "status": "NOT VALIDATED",
+    "reason": "No successful external-project validation is claimed by this runtime evidence record.",
     "repository": "https://github.com/tabcat/pw-tsconfig-repro"
   }
 }

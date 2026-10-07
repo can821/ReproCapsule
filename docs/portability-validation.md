@@ -11,7 +11,7 @@ Starting main: `fe69e9eaf3e7b6528977a497c6c2d69942d2645c` (documentation-only su
 | Checkpoint/resume, interruption/process cleanup, portable verification | Included in core suite | Included in core suite |
 | npm pack --dry-run | PASS | PASS |
 
-Node 22 came from the official `v22.23.3` macOS arm64 archive; its SHA256 matched the official SHASUMS256 file. The unpacked runtime is local ignored tooling, not a global installation. Node 24 baseline used npm 10.9.2; Node 22 uses bundled npm 10.9.9. No production compatibility shim was needed. The audit covered child_process, SourceMap.findOrigin, fs promises, AbortSignal, URL/path operations, signals and the node:test runner. Engine metadata permits >=22 only after these local checks. CI now requests Ubuntu/macOS × Node 22/24; new remote results are still required.
+Node 22 came from the official `v22.23.3` macOS arm64 archive; its SHA256 matched the official SHASUMS256 file. The unpacked runtime is local ignored tooling, not a global installation. Node 24 baseline used npm 10.9.2; Node 22 uses bundled npm 10.9.9. No production compatibility shim was needed. The audit covered child_process, SourceMap.findOrigin, fs promises, AbortSignal, URL/path operations, signals and the node:test runner. Engine metadata permits >=22 only after these local checks. Ubuntu/macOS × Node 22/24 and historical validation passed [CI run 37555478122](https://github.com/can821/ReproCapsule/actions/runs/37555478122) on commit `052e9dad233aac13ec7071bc0975b428a05114db`.
 
 ## Windows: blocked execution contract, not supported
 
@@ -34,9 +34,9 @@ For source installation, use the README commands. For a local tarball, run `npm 
 
 ## Outstanding gates
 
-- New four-combination remote matrix must pass before claiming Node 22 remote support.
+- Four-combination remote matrix: PASS, including Node 22 on both operating systems.
 - Windows remains unsupported; six-combination portability success is not achieved.
-- The independent `tabcat/pw-tsconfig-repro` validation is deliberately not run before remote platform gates, as requested. Its status is NOT RUN, not PASS or a diagnosed product defect.
+- No successful independent external-project validation is recorded here; this runtime evidence is not external-user validation.
 - No new tag/release or npm publication is authorized by this sprint. beta.2 readiness depends on the remaining evidence, not the metadata change alone.
 
 ## Final local gate
