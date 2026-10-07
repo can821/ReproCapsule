@@ -1,0 +1,245 @@
+{
+  "startingHead": "fe69e9eaf3e7b6528977a497c6c2d69942d2645c",
+  "version": "0.6.0-beta.1",
+  "engines": ">=22",
+  "private": true,
+  "node24Baseline": {
+    "passed": 96,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 22127.54625
+  },
+  "node22": {
+    "version": "22.23.3",
+    "npm": "10.9.9",
+    "platform": "macOS arm64",
+    "passed": 96,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 23614.06775,
+    "typescript": {
+      "before": 7,
+      "after": 6,
+      "runs": 24,
+      "elapsedMs": 17303,
+      "sourceReduction": {
+        "file": "src/parser.ts",
+        "parser": "TypeScript",
+        "parserVersion": "5.8.3",
+        "originalBytes": 339,
+        "originalStatements": 4,
+        "originalAstUnits": 8,
+        "finalBytes": 231,
+        "finalStatements": 3,
+        "finalAstUnits": 5,
+        "attempts": 12,
+        "parseRejections": 0,
+        "rejections": {
+          "parse": 0,
+          "nonReducing": 0,
+          "targetChanged": 10
+        },
+        "acceptedReductions": 2,
+        "complete": true,
+        "terminationReason": "complete",
+        "retainedUnits": [
+          {
+            "kind": "FunctionDeclaration",
+            "start": 0,
+            "end": 111,
+            "depth": 0
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 78,
+            "end": 109,
+            "depth": 1
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 111,
+            "end": 198,
+            "depth": 0
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 168,
+            "end": 196,
+            "depth": 1
+          },
+          {
+            "kind": "ClassDeclaration",
+            "start": 273,
+            "end": 338,
+            "depth": 0
+          }
+        ],
+        "scope": "Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command"
+      },
+      "top": {
+        "file": "src/parser.ts",
+        "line": 2,
+        "column": 24,
+        "stackDepth": 0,
+        "evidence": [
+          "top-project-stack-frame",
+          "present-in-accepted-failure-stack",
+          "retained-file-low-weight",
+          "source-map-original-location"
+        ],
+        "generated": {
+          "file": "dist/parser.js",
+          "line": 7,
+          "column": 25
+        }
+      },
+      "verified": true
+    }
+  },
+  "finalNode24": {
+    "version": "24.19.0",
+    "npm": "10.9.2",
+    "platform": "macOS arm64",
+    "cleanNpmCi": true,
+    "passed": 96,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 22279.028416,
+    "typescript": {
+      "before": 7,
+      "after": 6,
+      "runs": 24,
+      "elapsedMs": 16293,
+      "sourceReduction": {
+        "file": "src/parser.ts",
+        "parser": "TypeScript",
+        "parserVersion": "5.8.3",
+        "originalBytes": 339,
+        "originalStatements": 4,
+        "originalAstUnits": 8,
+        "finalBytes": 231,
+        "finalStatements": 3,
+        "finalAstUnits": 5,
+        "attempts": 12,
+        "parseRejections": 0,
+        "rejections": {
+          "parse": 0,
+          "nonReducing": 0,
+          "targetChanged": 10
+        },
+        "acceptedReductions": 2,
+        "complete": true,
+        "terminationReason": "complete",
+        "retainedUnits": [
+          {
+            "kind": "FunctionDeclaration",
+            "start": 0,
+            "end": 111,
+            "depth": 0
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 78,
+            "end": 109,
+            "depth": 1
+          },
+          {
+            "kind": "FunctionDeclaration",
+            "start": 111,
+            "end": 198,
+            "depth": 0
+          },
+          {
+            "kind": "ReturnStatement",
+            "start": 168,
+            "end": 196,
+            "depth": 1
+          },
+          {
+            "kind": "ClassDeclaration",
+            "start": 273,
+            "end": 338,
+            "depth": 0
+          }
+        ],
+        "scope": "Hierarchical AST statement and class-member deletion in one selected file; no expression or global minimum claim; builds must be included in command"
+      },
+      "top": {
+        "file": "src/parser.ts",
+        "line": 2,
+        "column": 24,
+        "stackDepth": 0,
+        "evidence": [
+          "top-project-stack-frame",
+          "present-in-accepted-failure-stack",
+          "retained-file-low-weight",
+          "source-map-original-location"
+        ],
+        "generated": {
+          "file": "dist/parser.js",
+          "line": 7,
+          "column": 25
+        }
+      },
+      "verified": true
+    }
+  },
+  "installation": {
+    "runtime": "v24.19.0",
+    "githubRevision": "fe69e9eaf3e7b6528977a497c6c2d69942d2645c",
+    "sourceUnchanged": true,
+    "results": [
+      {
+        "method": "github-source",
+        "verified": true,
+        "portableRoundTrip": true,
+        "files": {
+          "before": 11,
+          "after": 1
+        },
+        "runs": 13,
+        "elapsedMs": 296,
+        "terminationReason": "complete",
+        "complete": true
+      },
+      {
+        "method": "packed-install",
+        "verified": true,
+        "portableRoundTrip": true,
+        "files": {
+          "before": 11,
+          "after": 1
+        },
+        "runs": 13,
+        "elapsedMs": 296,
+        "terminationReason": "complete",
+        "complete": true
+      }
+    ]
+  },
+  "npmPack": {
+    "status": "PASS",
+    "entries": 38,
+    "size": 55405,
+    "unpackedSize": 185101,
+    "unexpectedWorkingFiles": []
+  },
+  "windows": {
+    "status": "NOT SUPPORTED",
+    "reason": "POSIX execution, npm shim, capsule script and process-group lifecycle need coordinated Windows implementation."
+  },
+  "remoteMatrix": {
+    "status": "NOT RUN",
+    "requested": [
+      "ubuntu-node22",
+      "ubuntu-node24",
+      "macos-node22",
+      "macos-node24"
+    ]
+  },
+  "externalProject": {
+    "status": "NOT RUN",
+    "reason": "Gated on remote matrix as requested",
+    "repository": "https://github.com/tabcat/pw-tsconfig-repro"
+  }
+}

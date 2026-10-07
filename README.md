@@ -1,24 +1,42 @@
 # ReproCapsule
 
-ReproCapsule reduces failing Node.js/npm projects into smaller, independently verifiable reproduction capsules while preserving the target failure.
+Turn a failing JavaScript/TypeScript project into a smaller, independently verifiable bug reproduction, with evidence to help investigate it.
 
-**30-second example:** a historical Day.js objectSupport regression was reduced from **448 files to 5**, and the reduced capsule reproduced the same strict failure in a fresh copy. That is one measured historical case, not a promised reduction ratio.
+For developers reporting bugs, library/framework maintainers, open-source contributors, QA/test engineers and support engineers. When a failing project contains too much unrelated code to share or investigate, ReproCapsule removes tested parts while checking that the intended failure still occurs.
 
-**Status:** [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) is a published GitHub pre-release. Its exact release commit `6301a9fe85ba237fba27d84826fb9e5a9c6c880d` passed Ubuntu and macOS Node 24 core checks, historical validation, the real TypeScript proof, and `npm pack --dry-run` in [CI run 37525635007](https://github.com/can821/ReproCapsule/actions/runs/37525635007). The core test job reported **96/96 passing tests on both operating systems**. **External-user validation is not yet established**; broad ecosystem compatibility is therefore not claimed.
+**One measured example:** a historical Day.js objectSupport regression went from **448 files to 5** and reproduced the same strict failure in a fresh copy. This is one historical result, not a guaranteed reduction ratio.
 
-## Quick start
+## Run it
 
-Supported today: Node 24+ and npm-based projects on macOS/Linux. The beta is distributed from GitHub source; it is **not published to npm yet**, and `private: true` prevents accidental publication. Windows, Node 22, yarn and pnpm are not currently declared supported.
+Use Node 24 and npm 9+ for the remotely verified release path. GitHub source installation and a locally packed tarball were each tested in fresh directories, including reduction, verification and a portable round-trip. Nothing is published to npm; `private: true` remains enabled.
 
 ```sh
 git clone https://github.com/can821/ReproCapsule.git
 cd ReproCapsule
 npm ci --ignore-scripts
-node bin/reprocapsule.js reduce --repo /path/to/broken-project --command 'npm test' --out /tmp/reprocapsule-case
+node bin/reprocapsule.js reduce --repo /path/to/broken-project --command 'node repro.cjs' --out /tmp/reprocapsule-case
 node bin/reprocapsule.js verify /tmp/reprocapsule-case
 ```
 
-Output must be new and outside the source. npm may be supplied with `--npm-path /path/to/npm-cli.js` or `REPROCAPSULE_NPM`. This tool never installs system software. npm publication is deferred while the beta is being validated by external users. Licensed under MIT, Copyright (c) 2026 Can Yilmaz.
+The command is yours: `node repro.cjs`, `npm test`, or a compiler/build command. Include required builds in that command. Controlled tests cover Node script failures, npm tests and TypeScript builds; this is not a claim of Jest, Vitest or Playwright compatibility.
+
+Output must be new and outside the input project. Start with a trusted project; **ReproCapsule is not a sandbox**. npm may be supplied using `--npm-path` or `REPROCAPSULE_NPM`.
+
+## Compatibility
+
+| Platform | Node 24 | Node 22 |
+|---|---|---|
+| Ubuntu/Linux | Release CI verified | Candidate matrix configured; remote verification outstanding |
+| macOS | Release CI verified | Local 22.23.3: 96/96 tests and TypeScript proof passed; remote verification outstanding |
+| Windows | Unsupported | Unsupported |
+
+The published [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) remains unchanged. Its [release CI](https://github.com/can821/ReproCapsule/actions/runs/37525635007) passed 96 core tests on Ubuntu/macOS Node 24, historical validation, real TypeScript proof and package checks. The current checkout permits Node >=22 after local verification; the new matrix must pass before Node 22 is declared remotely supported. Other Node majors are not implied to have been tested by the engine range.
+
+See [portability audit and installation evidence](docs/portability-validation.md), [historical regressions](#historical-regressions-and-advanced-workflows), and [security and limitations](#security-and-remaining-scope). External-user validation remains outstanding. MIT licensed; Copyright (c) 2026 Can Yilmaz.
+
+## Where it fits
+
+Manual reduction remains useful when you already know what can be removed. ReproCapsule automates tested removal attempts and fresh verification across a JS/TS project, then packages the reproduction. `git bisect` searches revisions; it complements this project reduction. Generic delta debugging/ddmin and source reducers such as C-Reduce and Perses are related approaches, not inventions of this project. No comparative speed or minimality advantage is claimed; see [related work](#related-work).
 
 ## Scope
 
@@ -93,16 +111,16 @@ Five independent published production distributions were tested with authored ne
 
 **Not a sandbox.** Commands, selected parser/reporter modules, explicitly selected plugins and opted-in lifecycle scripts execute with user permissions, including access to network/external files. Installs occur in copies; lifecycle scripts default OFF. `.git`, `node_modules`, symlinks and known secret filenames are excluded. Filename filtering is not a secret-content scanner. Do not run untrusted projects, commands or plugins as though ReproCapsule were an isolation boundary. Review command metadata before sharing. Hashes detect corruption, not malicious replacement of both content and metadata. No telemetry, automatic source upload or LLM integration.
 
-No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; only one actual Node version was available locally. Controlled wrappers test the mechanism, not cross-version compatibility. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix.
+No browser reproduction or additional package managers. Runtime comparison accepts existing explicit executable paths; its original comparison evidence used one actual Node version and controlled wrappers. The new Node 22/24 core checks do not establish a real runtime-regression boundary. Intermittent reduction requires explicit opt-in and a target matcher; it makes no probability claim. Git/dependency boundaries and patch results are evidence, not proof of causation or a complete fix.
 
 ### Current gaps and next validation targets
 
 - No external-user validation has been completed yet.
-- Windows, Node 22, yarn and pnpm are not currently supported/validated.
+- Windows remains unsupported; Node 22 remote validation is outstanding. yarn and pnpm remain unsupported.
 - No Docker/container sandbox is provided; untrusted projects or plugins should not be executed directly.
 - Candidate evaluation is sequential; parallel evaluation is not implemented.
 - There is no apples-to-apples benchmark against other reducers yet.
-- Near-term priority is external-user feedback first, then platform/package-manager expansion or performance work based on observed demand.
+- External-project validation is gated on the new remote matrix; no additional framework support is advertised before that proof.
 
 ### GitHub Actions usage today
 
