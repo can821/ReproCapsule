@@ -16,6 +16,7 @@ export async function verifyFix({ capsule, patch, testCommand, ...execution }) {
   const workspace = await createWorkspace(capsule);
   try {
     const cwd = await workspace.materialize(workspace.files);
+    if (JSON.parse(await readFile(path.join(cwd,'capsule.json'),'utf8')).pairedOracle) throw new ReproError('UNSUPPORTED_PAIRED_FIX','Patch verification of paired capsules is not supported; verify both controls explicitly.');
     if (JSON.parse(await readFile(path.join(cwd,'capsule.json'),'utf8')).reproductionPolicy) throw new ReproError('UNSUPPORTED_REPEATED_FIX','Patch verification currently requires a deterministic capsule; a single passing sample cannot prove intermittent target removal.');
     const baseline = await verifyCapsule({ capsule: cwd, ...execution });
     // Freeze verified metadata before applying an untrusted patch to the copy.

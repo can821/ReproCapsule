@@ -37,6 +37,7 @@ Options:
   --allow-install-scripts              Explicit opt-in; default ignores scripts
   --offline                           npm offline mode (local fixture packages)
   --monotonic                        Explicit ordered PASS→FAIL assumption for dependency binary search
+  --passing-command COMMAND          Paired reduction: require a fresh normal exit-zero control
   --repeat-runs N --match-threshold R  Opt-in repeated candidate acceptance; explicit matcher required
   --baseline-runs N                   Clean baseline repetitions, 2–100 (2)
   --matcher FILE                     JSON ALL/ANY conditions for exitCode/stdout/stderr/exception/stack
@@ -143,7 +144,7 @@ export async function main(args = process.argv.slice(2)) {
   const restored = resuming ? await resumeOptions(positionals[1], { allowInstallScripts: common.allowInstallScripts }) : {};
   const result = await buildCapsule({
     repo: values.repo ? path.resolve(values.repo) : undefined, command: values.command, output: path.resolve(values.out ?? './repro-capsule-output'), ...common,
-    baselineRuns: positive('baseline-runs', 2), repeatRuns:positive('repeat-runs',undefined), matchThreshold:values['match-threshold']===undefined?undefined:Number(values['match-threshold']), matcher, matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
+    passingCommand:values['passing-command'], baselineRuns: positive('baseline-runs', 2), repeatRuns:positive('repeat-runs',undefined), matchThreshold:values['match-threshold']===undefined?undefined:Number(values['match-threshold']), matcher, matchStderr: values['match-stderr'], exitCode: values['exit-code'] === undefined ? undefined : positive('exit-code'),
     maxRuns: positive('max-runs', Infinity), maxTimeMs: positive('max-time', Infinity) * 1000, keep: values.keep ?? [], checkpoint: values.checkpoint, audit: values['audit-minimality'] ?? false, cacheDir: values['cache-dir'], reduceInput: values['reduce-input'], inputMaxRuns: positive('input-max-runs', 200), reduceSource: values['reduce-source'], reduceSourceAll:values['reduce-source-all'] ?? false, sourceParser: values['source-parser'], sourceMaxRuns: positive('source-max-runs', 100), converge:values.converge ?? false, maxRounds:positive('max-rounds',5),
     ...restored,
     inputMaxRuns: positive('input-max-runs', restored.inputMaxRuns ?? 200),
