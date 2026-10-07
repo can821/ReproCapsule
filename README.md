@@ -2,7 +2,7 @@
 
 Turn a failing JavaScript/TypeScript project into a smaller, independently verifiable bug reproduction, with evidence to help investigate it.
 
-For developers reporting bugs, library/framework maintainers, open-source contributors, QA/test engineers and support engineers. When a failing project contains too much unrelated code to share or investigate, ReproCapsule removes tested parts while checking that the intended failure still occurs.
+A large failing project can be difficult to share or debug. ReproCapsule removes unnecessary project material while repeatedly verifying the target failure. For regressions with a known passing control, optional paired reduction preserves both the failing result and the passing result.
 
 **One measured example:** a historical Day.js objectSupport regression went from **448 files to 5** and reproduced the same strict failure in a fresh copy. This is one historical result, not a guaranteed reduction ratio.
 
@@ -28,9 +28,9 @@ Output must be new and outside the input project. Start with a trusted project; 
 |---|---|---|
 | Ubuntu/Linux | Remote CI verified | Remote CI verified |
 | macOS | Remote CI verified | Remote CI verified |
-| Windows | Unsupported | Unsupported |
+| Windows | Implementation awaiting remote CI | Implementation awaiting remote CI |
 
-The published [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) remains unchanged. Current main commit `052e9dad233aac13ec7071bc0975b428a05114db` passed Ubuntu/macOS × Node 22/24 core tests, real TypeScript proof and package checks, plus the historical job in [CI run 37555478122](https://github.com/can821/ReproCapsule/actions/runs/37555478122). The engine range is >=22; other Node majors are not implied to have been tested.
+The published [`v0.6.0-beta.1`](https://github.com/can821/ReproCapsule/releases/tag/v0.6.0-beta.1) remains unchanged. The previously validated Ubuntu/macOS × Node 22/24 matrix passed [CI run 37616135733](https://github.com/can821/ReproCapsule/actions/runs/37616135733). Current development adds paired reduction and Windows execution paths; the new six-combination matrix must pass before beta.2 publication. The engine range is >=22; other Node majors are not implied to have been tested. See [current validation evidence](docs/finalization-evidence.md).
 
 See [portability audit and installation evidence](docs/portability-validation.md), [historical regressions](#historical-regressions-and-advanced-workflows), and [security and limitations](#security-and-remaining-scope). External-user validation remains outstanding. MIT licensed; Copyright (c) 2026 Can Yilmaz.
 
@@ -47,6 +47,7 @@ Manual reduction remains useful when you already know what can be removed. Repro
 ## Working capabilities
 
 - Chunk-based file reduction and top-level npm dependency reduction; npm owns lockfile regeneration and fresh installs.
+- Optional paired reduction with `--passing-command`: each candidate must preserve the target failure and a fresh exit-zero control; both are checked again during capsule verification.
 - Repeated baseline verification, strict normalized failure signatures, or explicit `--match-stderr TEXT [--exit-code N]`.
 - Atomic checkpoint/resume, scoped persistent candidate cache, run/time/install budgets, JSON CLI output.
 - Retained-item explanations and optional fresh single-removal file/dependency audit.
@@ -67,6 +68,19 @@ node bin/reprocapsule.js report ./capsule --out ./issue.md --format markdown
 node bin/reprocapsule.js report ./capsule --out ./summary.json --format json --plugin ./examples/plugins/summary.mjs
 ```
 
+### Preserve a known regression distinction
+
+```sh
+node bin/reprocapsule.js reduce --repo ./project --command "node repro.cjs bad" --passing-command "node repro.cjs good" --out ./paired-case
+node bin/reprocapsule.js verify ./paired-case
+```
+
+The two commands run in separate fresh copies with the same selected files, dependencies, input and source. The failing command must match the target; the passing command must exit zero without a signal, timeout or truncated output. A passing command may prepare its own dependency version. Those preparations must stay in the isolated working directory. Both sides consume the run budget, and paired policy is part of cache/checkpoint identity and portable metadata. Repeated/intermittent mode and patch verification are not combined with paired mode. Single-failure mode remains available.
+
+Independent [Playwright project evidence](docs/paired-external-proof.json): pinned upstream project, Playwright 1.62.0 FAIL / 1.61.0 PASS; **11 → 9 files**, all 3 dependencies retained, 20 executions, 26.367 seconds including final package verification. Both sides passed fresh capsule verification after pack/unpack. This is one external-project validation, not general Playwright or external-user validation.
+
+New capsules include `reproduce.cjs`; `node reproduce.cjs` runs the failing command. Use `verify` to check both sides of a paired capsule. Commands themselves must be valid for the destination shell (`/bin/sh` on POSIX, `cmd.exe` on Windows). Internal Windows arguments containing quotes, `%`, `!` or newlines are explicitly rejected; arbitrary cross-shell command translation is not provided.
+
 ### TypeScript and source reduction
 
 The project's command must build and run its reproduction (for example `tsc -p tsconfig.json && node dist/repro.js`). Tested with TypeScript 5.8.3. The tool does not replace a compiler or claim tsx/ts-node/Jest/Vitest compatibility.
@@ -83,7 +97,7 @@ Supported scope: flat named/versioned packages selected by explicit relative dir
 
 REQUIRED means necessary for this tested reproduction, not that a file contains the bug. The optional audit certifies only single removals in its tested file/dependency set, excluding protected/control files; not workspace/input/source/global minimality. Default signature hashes normalized full stdout/stderr and nonzero exit status. Different messages/stack positions are significant. Timeouts, signals and truncated output do not match. Explicit stderr predicates deliberately broaden acceptance.
 
-`--max-runs`, `--max-time` (seconds), `--timeout-ms` and `--install-timeout-ms` bound work; mandatory final verification may extend the reduction deadline. Partial results are exported only after verification. Cache entries exclude raw output/environment values and bind to a whole-environment fingerprint, but cannot model changing external services. Baseline, audit and final checks stay fresh. Older tool-version checkpoints are rejected; existing capsule directories remain verifiable. Source recipes now use version 2. SIGINT/SIGTERM during a running child command stops its process group; resume starts from the last accepted checkpoint. SIGKILL can leave temporary directories and cannot run cleanup.
+`--max-runs`, `--max-time` (seconds), `--timeout-ms` and `--install-timeout-ms` bound work; mandatory final verification may extend the reduction deadline. Partial results are exported only after verification. Cache entries exclude raw output/environment values and bind to a whole-environment fingerprint, but cannot model changing external services. Baseline, audit and final checks stay fresh. Older tool-version checkpoints are rejected; existing capsule directories remain verifiable. Source recipes now use version 2. On POSIX, SIGINT/SIGTERM during a running command stops its process group. The Windows implementation uses a live supervisor and `taskkill /T /F` to terminate descendants, including after normal command exit; cleanup failures are explicit errors. Windows signal behavior is not identical to POSIX; forced termination cannot save a checkpoint. Resume starts from the last accepted checkpoint. SIGKILL can leave temporary directories and cannot run cleanup.
 
 Reports inspect integrity without executing the recorded command and do not embed source. Reporter contract: default export `{apiVersion:1,name,formats,render(report,{format})}` returning text up to 8 MiB. The plain-data report model has schemaVersion 1. This is a reporter-only plugin foundation, not a general adapter framework.
 
@@ -116,7 +130,7 @@ No browser reproduction or additional package managers. Runtime comparison accep
 ### Current gaps and next validation targets
 
 - No external-user validation has been completed yet.
-- Windows, yarn, pnpm and Bun remain unsupported.
+- Windows implementation awaits real remote CI; support is not yet claimed. yarn, pnpm and Bun are outside the current scope.
 - No Docker/container sandbox is provided; untrusted projects or plugins should not be executed directly.
 - Candidate evaluation is sequential; parallel evaluation is not implemented.
 - There is no apples-to-apples benchmark against other reducers yet.

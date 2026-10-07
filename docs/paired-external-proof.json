@@ -1,0 +1,132 @@
+{
+  "repository": "https://github.com/tabcat/pw-tsconfig-repro",
+  "commit": "b19d0a061941e8af34f0d7558717f80c7370688d",
+  "date": "2026-10-07",
+  "environment": {
+    "node": "v24.19.0",
+    "npm": "10.9.9",
+    "platform": "darwin",
+    "osRelease": "25.6.0",
+    "arch": "arm64"
+  },
+  "baseline": {
+    "bad": {
+      "version": "1.62.0",
+      "exitCode": 1,
+      "targetConfirmed": true
+    },
+    "good": {
+      "version": "1.61.0",
+      "exitCode": 0
+    }
+  },
+  "command": "npx --no-install playwright test",
+  "passingCommand": "npm install --ignore-scripts --no-audit --no-fund --save-exact -D @playwright/test@1.61.0 && npx --no-install playwright test",
+  "matcher": {
+    "all": [
+      {
+        "field": "exitCode",
+        "equals": 1
+      },
+      {
+        "field": "stdout",
+        "contains": "Failed to resolve \"extends\" path \"foo/tsconfig.json\""
+      },
+      {
+        "field": "stdout",
+        "contains": "dep-src/tsconfig.json"
+      }
+    ]
+  },
+  "reduction": {
+    "originalFileCount": 11,
+    "finalFileCount": 9,
+    "originalCandidateCount": 7,
+    "finalCandidateCount": 5,
+    "reductionPercentage": 18.18,
+    "candidateAttempts": 8,
+    "acceptedReductions": 1,
+    "reproductionAttempts": 20,
+    "cacheHits": 2,
+    "cacheMisses": 6,
+    "persistentCacheHits": 0,
+    "installCount": 20,
+    "baselineRuns": 4,
+    "durationBeforePackageVerificationMs": 22408,
+    "terminationReason": "complete",
+    "complete": true,
+    "guarantee": "reduction complete; 1-minimality not certified without a passing audit"
+  },
+  "elapsedMs": 26367,
+  "retainedFiles": [
+    "dep-src/index.js",
+    "dep-src/package.json",
+    "dep-src/tsconfig.json",
+    "foo-pkg/index.js",
+    "foo-pkg/package.json",
+    "foo-pkg/tsconfig.json",
+    "package-lock.json",
+    "package.json",
+    "x.spec.ts"
+  ],
+  "dependencies": {
+    "status": "reduced",
+    "installationPerformed": true,
+    "originalCount": 3,
+    "finalCount": 3,
+    "retained": [
+      "dependencies:dep",
+      "dependencies:foo",
+      "devDependencies:@playwright/test"
+    ],
+    "original": [
+      "dependencies:dep",
+      "dependencies:foo",
+      "devDependencies:@playwright/test"
+    ],
+    "attempts": 5,
+    "acceptedReductions": 0,
+    "peerDependencies": {},
+    "allowInstallScripts": false,
+    "offline": false
+  },
+  "verified": {
+    "pairedVerification": {
+      "bad": "PASS",
+      "good": "PASS",
+      "passingExitCode": 0
+    },
+    "success": true,
+    "integrity": "pass",
+    "install": "pass",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "packed": {
+    "format": "reprocapsule-gzip-json",
+    "version": 1,
+    "files": 12,
+    "payloadBytes": 11731,
+    "archiveBytes": 6832
+  },
+  "fresh": {
+    "pairedVerification": {
+      "bad": "PASS",
+      "good": "PASS",
+      "passingExitCode": 0
+    },
+    "success": true,
+    "integrity": "pass",
+    "install": "pass",
+    "failure": "pass",
+    "verified": true,
+    "exitCode": 1
+  },
+  "originalUnchanged": true,
+  "limitations": [
+    "One external project, not general Playwright or external-user validation.",
+    "Passing command performs an additional install per observation, outside preparation installCount; every command execution consumes the run budget.",
+    "No global minimum claim."
+  ]
+}
